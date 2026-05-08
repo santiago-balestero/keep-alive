@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Header from '@/components/Header'
+import Image from 'next/image'
 
 type Pregunta = {
   id: number
@@ -23,8 +24,13 @@ export default function Preguntas() {
   const [indice, setIndice] = useState(0)
   const [respuesta, setRespuesta] = useState('')
   const [respuestasGuardadas, setRespuestasGuardadas] = useState<Record<number, string>>({})
+  const [imagenesGuardadas, setImagenesGuardadas] = useState<Record<number, string>>({})
+  const [imagenPreview, setImagenPreview] = useState<string | null>(null)
+  const [imagenFile, setImagenFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [guardado, setGuardado] = useState(false)
+  const [subiendoImagen, setSubiendoImagen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
   const router = useRouter()
   const params = useParams()
@@ -34,37 +40,33 @@ export default function Preguntas() {
   useEffect(() => {
     const fetchData = async () => {
       const { data: h } = await supabase
-        .from('historias')
-        .select('tipo')
-        .eq('id', historiaId)
-        .single()
+        .from('historias').select('tipo').eq('id', historiaId).single()
       if (h) setHistoria(h)
 
       const { data: t } = await supabase
-        .from('topicos')
-        .select('nombre_es')
-        .eq('id', topicoId)
-        .single()
+        .from('topicos').select('nombre_es').eq('id', topicoId).single()
       if (t) setTopicoNombre(t.nombre_es)
 
       const { data: p } = await supabase
-        .from('preguntas')
-        .select('*')
-        .eq('id_topico', topicoId)
-        .order('orden')
+        .from('preguntas').select('*').eq('id_topico', topicoId).order('orden')
       if (p) setPreguntas(p)
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: r } = await supabase
           .from('respuestas')
-          .select('id_pregunta, contenido')
+          .select('id_pregunta, contenido, imagen_url')
           .eq('id_historia', historiaId)
           .eq('id_usuario', user.id)
         if (r) {
-          const mapa: Record<number, string> = {}
-          r.forEach((resp) => { mapa[resp.id_pregunta] = resp.contenido })
-          setRespuestasGuardadas(mapa)
+          const mapaTexto: Record<number, string> = {}
+          const mapaImagenes: Record<number, string> = {}
+          r.forEach((resp) => {
+            mapaTexto[resp.id_pregunta] = resp.contenido
+            if (resp.imagen_url) mapaImagenes[resp.id_pregunta] = resp.imagen_url
+          })
+          setRespuestasGuardadas(mapaTexto)
+          setImagenesGuardadas(mapaImagenes)
         }
       }
     }
@@ -74,14 +76,31 @@ export default function Preguntas() {
   useEffect(() => {
     if (preguntas[indice]) {
       setRespuesta(respuestasGuardadas[preguntas[indice].id] || '')
+      setImagenPreview(imagenesGuardadas[preguntas[indice].id] || null)
+      setImagenFile(null)
       setGuardado(false)
     }
-  }, [indice, preguntas, respuestasGuardadas])
+  }, [indice, preguntas, respuestasGuardadas, imagenesGuardadas])
 
   const preguntaActual = preguntas[indice]
   const textoPregunta = historia?.tipo === 'autobiografia'
     ? preguntaActual?.texto_es
     : preguntaActual?.texto_es_tercera
+
+  const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImagenFile(file)
+    setImagenPreview(URL.createObjectURL(file))
+    setGuardado(false)
+  }
+
+  const handleEliminarImagen = () => {
+    setImagenFile(null)
+    setImagenPreview(null)
+    setGuardado(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const handleGuardar = async () => {
     if (!preguntaActual) return
@@ -90,12 +109,38 @@ export default function Preguntas() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const existe = respuestasGuardadas[preguntaActual.id]
+    let imagenUrl = imagenesGuardadas[preguntaActual.id] || null
+
+    // Subir imagen si hay una nueva
+    if (imagenFile) {
+      setSubiendoImagen(true)
+      const ext = imagenFile.name.split('.').pop()
+      const path = `${user.id}/${historiaId}/${preguntaActual.id}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('imagenes')
+        .upload(path, imagenFile, { upsert: true })
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from('imagenes')
+          .getPublicUrl(path)
+        imagenUrl = urlData.publicUrl
+      }
+      setSubiendoImagen(false)
+    }
+
+    // Si se eliminó la imagen
+    if (!imagenPreview && !imagenFile) {
+      imagenUrl = null
+    }
+
+    const existe = respuestasGuardadas[preguntaActual.id] !== undefined
 
     if (existe) {
       await supabase
         .from('respuestas')
-        .update({ contenido: respuesta })
+        .update({ contenido: respuesta, imagen_url: imagenUrl })
         .eq('id_historia', historiaId)
         .eq('id_pregunta', preguntaActual.id)
         .eq('id_usuario', user.id)
@@ -107,10 +152,14 @@ export default function Preguntas() {
           id_pregunta: preguntaActual.id,
           id_usuario: user.id,
           contenido: respuesta,
+          imagen_url: imagenUrl,
         })
     }
 
     setRespuestasGuardadas((prev) => ({ ...prev, [preguntaActual.id]: respuesta }))
+    if (imagenUrl) {
+      setImagenesGuardadas((prev) => ({ ...prev, [preguntaActual.id]: imagenUrl! }))
+    }
     setGuardado(true)
     setLoading(false)
 
@@ -173,7 +222,7 @@ export default function Preguntas() {
             value={respuesta}
             onChange={(e) => { setRespuesta(e.target.value); setGuardado(false) }}
             placeholder="Escribí tu respuesta acá..."
-            rows={6}
+            rows={5}
             className="w-full px-4 py-3 text-sm border-2 border-[#EEEEEE] rounded-2xl bg-white text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] resize-none leading-relaxed"
           />
           {guardado && (
@@ -186,22 +235,64 @@ export default function Preguntas() {
           )}
         </div>
 
+        {/* Imagen */}
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-medium text-[#888888] uppercase tracking-widest">
+            Foto (opcional)
+          </p>
+
+          {imagenPreview ? (
+            <div className="relative rounded-2xl overflow-hidden border border-[#EEEEEE]">
+              <img
+                src={imagenPreview}
+                alt="Preview"
+                className="w-full object-cover max-h-64"
+              />
+              <button
+                onClick={handleEliminarImagen}
+                className="absolute top-2 right-2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center text-lg leading-none hover:bg-black/70"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full h-24 border-2 border-dashed border-[#DDDDDD] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#6B8FC2] hover:bg-[#F8FAFF] transition-colors"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#AAAAAA" strokeWidth="1.5">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+              </svg>
+              <span className="text-xs text-[#AAAAAA]">Subir foto</span>
+            </button>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImagenChange}
+            className="hidden"
+          />
+        </div>
+
         {/* Acciones */}
         <div className="flex gap-3">
           <button
             onClick={handleSaltar}
-            className="flex-1 h-11 border-2 border-[#EEEEEE] rounded-xl text-sm text-[#888888] bg-white hover:bg-[#F8F8F8] active:scale-[0.98]"
+            className="flex-1 h-12 border-2 border-[#EEEEEE] rounded-2xl text-sm text-[#888888] bg-white hover:bg-[#F8F8F8] active:scale-[0.98]"
           >
             Saltar
           </button>
           <button
             onClick={handleGuardar}
-            disabled={loading || !respuesta.trim()}
-            className="flex-[2] h-11 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40"
+            disabled={loading || (!respuesta.trim() && !imagenFile && !imagenPreview)}
+            className="flex-[2] h-12 bg-[#141414] text-white text-sm font-medium rounded-2xl hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40"
           >
-            {loading ? 'Guardando...' : indice < preguntas.length - 1 ? 'Guardar y seguir →' : 'Finalizar →'}
+            {subiendoImagen ? 'Subiendo foto...' : loading ? 'Guardando...' : indice < preguntas.length - 1 ? 'Guardar y seguir →' : 'Finalizar →'}
           </button>
         </div>
+
       </div>
     </main>
   )

@@ -21,6 +21,7 @@ type Pregunta = {
 type Respuesta = {
   id_pregunta: number
   contenido: string
+  imagen_url: string | null
 }
 
 type Topico = {
@@ -32,6 +33,7 @@ type Capitulo = {
   topico: Topico
   preguntas: Pregunta[]
   respuestas: Record<number, string>
+  imagenes: Record<number, string>
 }
 
 export default function VistaPrevia() {
@@ -63,15 +65,17 @@ export default function VistaPrevia() {
 
       const topicos: Topico[] = ht.map((row: any) => row.topicos).filter(Boolean)
 
-      const { data: respuestasData } = await supabase
-        .from('respuestas')
-        .select('id_pregunta, contenido')
-        .eq('id_historia', historiaId)
+const { data: respuestasData } = await supabase
+  .from('respuestas')
+  .select('id_pregunta, contenido, imagen_url')
+  .eq('id_historia', historiaId)
 
-      const mapaRespuestas: Record<number, string> = {}
-      respuestasData?.forEach((r: Respuesta) => {
-        mapaRespuestas[r.id_pregunta] = r.contenido
-      })
+     const mapaRespuestas: Record<number, string> = {}
+const mapaImagenes: Record<number, string> = {}
+respuestasData?.forEach((r: Respuesta) => {
+  mapaRespuestas[r.id_pregunta] = r.contenido
+  if (r.imagen_url) mapaImagenes[r.id_pregunta] = r.imagen_url
+})
 
       const caps: Capitulo[] = await Promise.all(
         topicos.map(async (t) => {
@@ -86,10 +90,11 @@ export default function VistaPrevia() {
           )
 
           return {
-            topico: t,
-            preguntas: preguntasConRespuesta,
-            respuestas: mapaRespuestas,
-          }
+  topico: t,
+  preguntas: preguntasConRespuesta,
+  respuestas: mapaRespuestas,
+  imagenes: mapaImagenes,
+}
         })
       )
 
@@ -173,19 +178,26 @@ export default function VistaPrevia() {
                   {capActual.topico.nombre_es}
                 </h2>
                 {capActual.preguntas.map((p) => (
-                  <div key={p.id} className="flex flex-col gap-2">
-                    <div className="border-l-2 border-[#6B8FC2] pl-3">
-                      <p className="text-xs text-[#888888]">
-                        {historia.tipo === 'autobiografia'
-                          ? p.texto_es
-                          : p.texto_es_tercera}
-                      </p>
-                    </div>
-                    <p className="text-sm text-[#141414] leading-relaxed pl-3">
-                      {capActual.respuestas[p.id]}
-                    </p>
-                  </div>
-                ))}
+  <div key={p.id} className="flex flex-col gap-2">
+    <div className="border-l-2 border-[#6B8FC2] pl-3">
+      <p className="text-xs text-[#888888]">
+        {historia.tipo === 'autobiografia'
+          ? p.texto_es
+          : p.texto_es_tercera}
+      </p>
+    </div>
+    <p className="text-sm text-[#141414] leading-relaxed pl-3">
+      {capActual.respuestas[p.id]}
+    </p>
+    {capActual.imagenes[p.id] && (
+      <img
+        src={capActual.imagenes[p.id]}
+        alt="Foto"
+        className="w-full rounded-2xl object-cover max-h-72 mt-2"
+      />
+    )}
+  </div>
+))}
               </div>
             )}
 
