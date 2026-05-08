@@ -10,7 +10,9 @@
   padding: 0;
 }
 
-html {
+html, body {
+  overflow-x: hidden;
+  width: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -20,7 +22,6 @@ body {
   background: #F5F5F5;
 }
 
-/* Scrollbar sutil */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -31,11 +32,4 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #DDDDDD;
   border-radius: 2px;
-}
-
-/* Transiciones globales */
-* {
-  transition-property: color, background-color, border-color, opacity, transform;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
 }
