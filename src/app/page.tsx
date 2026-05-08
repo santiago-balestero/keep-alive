@@ -116,9 +116,12 @@ export default function LoginPage() {
         </button>
 
         {isLogin && (
-          <button className="text-xs text-[#888888] hover:underline">
-            Olvidé mi contraseña
-          </button>
+          <button
+  onClick={() => router.push('/recuperar-contrasena')}
+  className="text-xs text-[#888888] hover:underline"
+>
+  Olvidé mi contraseña
+</button>
         )}
       </div>
     </main>
