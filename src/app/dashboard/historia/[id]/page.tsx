@@ -1,17 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
+import Header from '@/components/Header'
 
-type Historia = {
+type Colaborador = {
   id: string
-  titulo: string
-  tipo: string
-  nombre_protagonista: string | null
-  estado: string
-  descripcion: string | null
+  email: string
+  estado: 'pendiente' | 'aceptado' | 'rechazado'
+  fecha_invitacion: string
 }
 
 type Topico = {
@@ -19,215 +17,162 @@ type Topico = {
   nombre_es: string
 }
 
-type ProgresoTopico = {
-  topico: Topico
-  total: number
-  respondidas: number
-}
-
-export default function DetalleHistoria() {
-  const [historia, setHistoria] = useState<Historia | null>(null)
-  const [progreso, setProgreso] = useState<ProgresoTopico[]>([])
-  const [loading, setLoading] = useState(true)
+export default function Colaboradores() {
+  const [colaboradores, setColaboradores] = useState<Colaborador[]>([])
+  const [topicos, setTopicos] = useState<Topico[]>([])
+  const [email, setEmail] = useState('')
+  const [tituloHistoria, setTituloHistoria] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [mensaje, setMensaje] = useState('')
   const supabase = createClient()
   const router = useRouter()
   const params = useParams()
   const historiaId = params.id as string
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data: h } = await supabase
-        .from('historias')
-        .select('*')
-        .eq('id', historiaId)
-        .single()
+  useEffect(() => { fetchData() }, [historiaId])
 
-      if (h) setHistoria(h)
+  const fetchData = async () => {
+    const { data: h } = await supabase
+      .from('historias').select('titulo').eq('id', historiaId).single()
+    if (h) setTituloHistoria(h.titulo)
 
-      const { data: ht } = await supabase
-        .from('historia_topicos')
-        .select('topicos(id, nombre_es)')
-        .eq('id_historia', historiaId)
+    const { data: c } = await supabase
+      .from('colaboradores').select('*').eq('id_historia', historiaId)
+      .order('fecha_invitacion', { ascending: false })
+    if (c) setColaboradores(c)
 
-      if (!ht) return
+    const { data: ht } = await supabase
+      .from('historia_topicos').select('topicos(id, nombre_es)').eq('id_historia', historiaId)
+    if (ht) setTopicos(ht.map((row: any) => row.topicos).filter(Boolean))
+  }
 
-      const topicos = ht.map((row: any) => row.topicos).filter(Boolean)
+  const handleInvitar = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    setMensaje('')
 
-      const progresoData: ProgresoTopico[] = await Promise.all(
-        topicos.map(async (t: Topico) => {
-          const { count: total } = await supabase
-            .from('preguntas')
-            .select('*', { count: 'exact', head: true })
-            .eq('id_topico', t.id)
-
-          const { count: respondidas } = await supabase
-            .from('respuestas')
-            .select('*', { count: 'exact', head: true })
-            .eq('id_historia', historiaId)
-            .eq('id_pregunta', supabase.from('preguntas').select('id').eq('id_topico', t.id) as any)
-
-          const { data: respuestasData } = await supabase
-            .from('respuestas')
-            .select('id_pregunta')
-            .eq('id_historia', historiaId)
-
-          const { data: preguntasTopico } = await supabase
-            .from('preguntas')
-            .select('id')
-            .eq('id_topico', t.id)
-
-          const idsPreguntas = new Set(preguntasTopico?.map((p) => p.id) || [])
-          const respondidas2 = respuestasData?.filter((r) => idsPreguntas.has(r.id_pregunta)).length || 0
-
-          return {
-            topico: t,
-            total: total || 0,
-            respondidas: respondidas2,
-          }
-        })
-      )
-
-      setProgreso(progresoData)
+    if (colaboradores.find((c) => c.email === email)) {
+      setError('Este email ya fue invitado.')
       setLoading(false)
+      return
     }
 
+    const { error: err } = await supabase
+      .from('colaboradores').insert({ id_historia: historiaId, email, estado: 'pendiente' })
+
+    if (err) {
+      setError(err.message)
+    } else {
+      setMensaje(`Invitación enviada a ${email}`)
+      setEmail('')
+      fetchData()
+    }
+    setLoading(false)
+  }
+
+  const handleEliminar = async (id: string) => {
+    await supabase.from('colaboradores').delete().eq('id', id)
     fetchData()
-  }, [historiaId])
+  }
 
-  const totalPreguntas = progreso.reduce((acc, p) => acc + p.total, 0)
-  const totalRespondidas = progreso.reduce((acc, p) => acc + p.respondidas, 0)
-  const porcentaje = totalPreguntas > 0 ? Math.round((totalRespondidas / totalPreguntas) * 100) : 0
-
-  if (loading) return (
-    <main className="min-h-screen bg-[#F5F5F5] flex items-center justify-center">
-      <p className="text-sm text-[#888888]">Cargando...</p>
-    </main>
-  )
-
-  if (!historia) return null
+  const estadoConfig = {
+    aceptado: { label: 'Aceptó', class: 'bg-[#E8EFF8] text-[#6B8FC2]' },
+    rechazado: { label: 'Rechazó', class: 'bg-[#F5F5F5] text-[#AAAAAA]' },
+    pendiente: { label: 'Pendiente', class: 'bg-[#F2F2F2] text-[#888888]' },
+  }
 
   return (
     <main className="min-h-screen bg-[#F5F5F5]">
-      <header className="bg-white border-b border-[#DDDDDD] px-6 py-3 flex items-center justify-between">
-        <Image src="/logo.jpg" alt="Keep Alive" width={60} height={60} className="object-contain" />
-        <button onClick={() => router.push('/dashboard')} className="text-sm text-[#6B8FC2] hover:underline">
-          ← Inicio
-        </button>
-      </header>
+      <Header backUrl={`/dashboard/historia/${historiaId}`} backLabel="Historia" />
 
-      <div className="max-w-lg mx-auto px-6 py-8 flex flex-col gap-6">
+      <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
 
-        {/* Encabezado */}
-        <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-medium text-[#141414]">{historia.titulo}</h1>
-          <p className="text-sm text-[#888888]">
-            {historia.tipo === 'autobiografia'
-              ? 'Autobiografía'
-              : `Biografía de regalo · ${historia.nombre_protagonista}`}
-          </p>
-          {historia.descripcion && (
-            <p className="text-xs text-[#AAAAAA] mt-1">{historia.descripcion}</p>
-          )}
+        <div>
+          <h1 className="text-2xl font-medium text-[#141414]">Colaboradores</h1>
+          <p className="text-sm text-[#888888] mt-1">{tituloHistoria}</p>
         </div>
 
-        {/* Progreso general */}
-        <div className="bg-white border border-[#DDDDDD] rounded-xl p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[#141414]">Progreso general</span>
-            <span className="text-sm font-medium text-[#6B8FC2]">{porcentaje}%</span>
-          </div>
-          <div className="h-2 bg-[#EEEEEE] rounded-full">
-            <div
-              className="h-2 bg-[#6B8FC2] rounded-full transition-all"
-              style={{ width: `${porcentaje}%` }}
+        {/* Invitar */}
+        <div className="bg-white border border-[#EEEEEE] rounded-2xl p-5 flex flex-col gap-3">
+          <h2 className="text-xs font-medium text-[#888888] uppercase tracking-widest">Invitar colaborador</h2>
+          <form onSubmit={handleInvitar} className="flex gap-2">
+            <input
+              type="email"
+              placeholder="Email del colaborador"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="flex-1 h-11 px-4 text-sm border border-[#EEEEEE] rounded-xl bg-[#F8F8F8] text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] focus:bg-white"
             />
-          </div>
-          <p className="text-xs text-[#888888]">
-            {totalRespondidas} de {totalPreguntas} preguntas respondidas
-          </p>
+            <button
+              type="submit"
+              disabled={loading}
+              className="h-11 px-4 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#333333] active:scale-[0.98] disabled:opacity-50"
+            >
+              {loading ? '...' : 'Invitar'}
+            </button>
+          </form>
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          {mensaje && <p className="text-xs text-[#6B8FC2]">✓ {mensaje}</p>}
         </div>
 
-        <div className="h-px bg-[#DDDDDD]" />
-
-        {/* Tópicos con progreso */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-medium text-[#888888] uppercase tracking-wide">Tópicos</h2>
-            <button
-              onClick={() => router.push(`/dashboard/historia/${historiaId}/topicos`)}
-              className="text-xs text-[#6B8FC2] hover:underline"
-            >
-              + Agregar
-            </button>
+        {/* Tópicos */}
+        {topicos.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xs font-medium text-[#888888] uppercase tracking-widest">Tópicos de esta historia</h2>
+            <div className="flex flex-wrap gap-2">
+              {topicos.map((t) => (
+                <span key={t.id} className="text-xs px-3 py-1.5 bg-white border border-[#EEEEEE] rounded-full text-[#4A4A4A]">
+                  {t.nombre_es}
+                </span>
+              ))}
+            </div>
           </div>
+        )}
 
-          {progreso.length === 0 ? (
-            <div className="bg-white border border-[#DDDDDD] rounded-xl p-6 text-center">
-              <p className="text-sm text-[#888888]">No hay tópicos seleccionados.</p>
-              <button
-                onClick={() => router.push(`/dashboard/historia/${historiaId}/topicos`)}
-                className="mt-3 text-sm text-[#6B8FC2] hover:underline"
-              >
-                Seleccionar tópicos →
-              </button>
+        {/* Lista */}
+        <div className="flex flex-col gap-3">
+          <h2 className="text-xs font-medium text-[#888888] uppercase tracking-widest">
+            Colaboradores {colaboradores.length > 0 && `(${colaboradores.length})`}
+          </h2>
+
+          {colaboradores.length === 0 ? (
+            <div className="bg-white border border-[#EEEEEE] rounded-2xl p-8 text-center flex flex-col gap-2">
+              <div className="text-3xl">👥</div>
+              <p className="text-sm text-[#888888]">Todavía no invitaste a nadie.</p>
+              <p className="text-xs text-[#AAAAAA]">Invitá personas para que aporten a esta historia.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {progreso.map(({ topico, total, respondidas }) => {
-                const pct = total > 0 ? Math.round((respondidas / total) * 100) : 0
-                return (
-                  <button
-                    key={topico.id}
-                    onClick={() => router.push(`/dashboard/historia/${historiaId}/preguntas/${topico.id}`)}
-                    className="bg-white border border-[#DDDDDD] rounded-xl px-4 py-3 flex flex-col gap-2 hover:border-[#6B8FC2] transition-colors text-left"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-[#141414]">{topico.nombre_es}</span>
-                      <span className="text-xs text-[#6B8FC2]">›</span>
-                    </div>
-                    <div className="h-1 bg-[#EEEEEE] rounded-full">
-                      <div
-                        className="h-1 bg-[#6B8FC2] rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-[#888888]">
-                      {respondidas} / {total} respondidas
+              {colaboradores.map((c) => (
+                <div key={c.id} className="bg-white border border-[#EEEEEE] rounded-2xl px-4 py-3 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[#F2F2F2] flex items-center justify-center text-sm font-medium text-[#4A4A4A] flex-shrink-0">
+                    {c.email[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#141414] truncate">{c.email}</p>
+                    <p className="text-xs text-[#AAAAAA]">
+                      {new Date(c.fecha_invitacion).toLocaleDateString('es-UY', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                      })}
                     </p>
+                  </div>
+                  <span className={`text-xs px-2.5 py-0.5 rounded-full flex-shrink-0 font-medium ${estadoConfig[c.estado].class}`}>
+                    {estadoConfig[c.estado].label}
+                  </span>
+                  <button
+                    onClick={() => handleEliminar(c.id)}
+                    className="text-[#CCCCCC] hover:text-red-400 flex-shrink-0 text-xl leading-none"
+                  >
+                    ×
                   </button>
-                )
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>
-
-        {/* Acciones */}
-<div className="flex gap-3">
-  <button
-    onClick={() => router.push(`/dashboard/historia/${historiaId}/colaboradores`)}
-    className="flex-1 h-10 border border-[#DDDDDD] rounded-md text-sm text-[#4A4A4A] bg-white hover:bg-[#F2F2F2] transition-colors"
-  >
-    Colaboradores
-  </button>
-  <button
-    onClick={() => router.push(`/dashboard/historia/${historiaId}/vista-previa`)}
-    className="flex-1 h-10 border border-[#DDDDDD] rounded-md text-sm text-[#4A4A4A] bg-white hover:bg-[#F2F2F2] transition-colors"
-  >
-    Ver historia
-  </button>
-</div>
-<button
-  onClick={() => {
-    const primerTopico = progreso.find((p) => p.respondidas < p.total)
-    if (primerTopico) {
-      router.push(`/dashboard/historia/${historiaId}/preguntas/${primerTopico.topico.id}`)
-    }
-  }}
-  className="w-full h-10 bg-[#141414] text-white text-sm font-medium rounded-md hover:bg-[#333333] transition-colors"
->
-  Responder preguntas →
-</button>
-
       </div>
     </main>
   )

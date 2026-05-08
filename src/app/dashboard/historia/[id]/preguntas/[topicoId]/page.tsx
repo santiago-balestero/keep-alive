@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
+import Header from '@/components/Header'
 
 type Pregunta = {
   id: number
@@ -115,13 +115,9 @@ export default function Preguntas() {
     setLoading(false)
 
     if (indice < preguntas.length - 1) {
-      setTimeout(() => {
-        setIndice((prev) => prev + 1)
-      }, 400)
+      setTimeout(() => setIndice((prev) => prev + 1), 400)
     } else {
-      setTimeout(() => {
-        router.push(`/dashboard/historia/${historiaId}`)
-      }, 600)
+      setTimeout(() => router.push(`/dashboard/historia/${historiaId}`), 600)
     }
   }
 
@@ -141,38 +137,33 @@ export default function Preguntas() {
 
   return (
     <main className="min-h-screen bg-[#F5F5F5]">
-      <header className="bg-white border-b border-[#DDDDDD] px-6 py-3 flex items-center justify-between">
-        <Image src="/logo.jpg" alt="Keep Alive" width={60} height={60} className="object-contain" />
-        <button onClick={() => router.push(`/dashboard/historia/${historiaId}`)} className="text-sm text-[#6B8FC2] hover:underline">
-          ← Historia
-        </button>
-      </header>
+      <Header backUrl={`/dashboard/historia/${historiaId}`} backLabel="Historia" />
 
-      <div className="max-w-lg mx-auto px-6 py-8 flex flex-col gap-6">
+      <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
 
         {/* Progreso */}
         <div className="flex flex-col gap-2">
           <div className="flex justify-between text-xs text-[#888888]">
-            <span>{topicoNombre}</span>
+            <span className="font-medium">{topicoNombre}</span>
             <span>{indice + 1} / {preguntas.length}</span>
           </div>
-          <div className="h-1 bg-[#EEEEEE] rounded-full">
+          <div className="h-1.5 bg-[#EEEEEE] rounded-full overflow-hidden">
             <div
-              className="h-1 bg-[#6B8FC2] rounded-full transition-all"
+              className="h-full bg-[#6B8FC2] rounded-full transition-all duration-500"
               style={{ width: `${((indice + 1) / preguntas.length) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Tip */}
-        <div className="border-l-2 border-[#6B8FC2] pl-3 bg-[#E8EFF8] py-2 pr-3 rounded-r-md">
-          <p className="text-xs text-[#6B8FC2]">
-            Consejo: describí quiénes estaban, cuándo y dónde ocurrió.
+        <div className="bg-[#E8EFF8] rounded-2xl px-4 py-3 border-l-4 border-[#6B8FC2]">
+          <p className="text-xs text-[#6B8FC2] leading-relaxed">
+            Consejo: describí quiénes estaban, cuándo y dónde ocurrió. Cuanto más detalle, mejor.
           </p>
         </div>
 
         {/* Pregunta */}
-        <div className="bg-[#F2F2F2] border border-[#141414] rounded-xl p-4">
+        <div className="bg-white border-2 border-[#141414] rounded-2xl p-5">
           <p className="text-sm text-[#141414] leading-relaxed">{textoPregunta}</p>
         </div>
 
@@ -182,11 +173,16 @@ export default function Preguntas() {
             value={respuesta}
             onChange={(e) => { setRespuesta(e.target.value); setGuardado(false) }}
             placeholder="Escribí tu respuesta acá..."
-            rows={5}
-            className="w-full px-3 py-3 text-sm border border-[#DDDDDD] rounded-xl bg-white text-[#141414] placeholder-[#AAAAAA] focus:outline-none focus:border-[#6B8FC2] resize-none"
+            rows={6}
+            className="w-full px-4 py-3 text-sm border-2 border-[#EEEEEE] rounded-2xl bg-white text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] resize-none leading-relaxed"
           />
           {guardado && (
-            <p className="text-xs text-[#6B8FC2]">✓ Guardado</p>
+            <p className="text-xs text-[#6B8FC2] flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="#6B8FC2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Guardado
+            </p>
           )}
         </div>
 
@@ -194,16 +190,16 @@ export default function Preguntas() {
         <div className="flex gap-3">
           <button
             onClick={handleSaltar}
-            className="flex-1 h-10 border border-[#DDDDDD] rounded-md text-sm text-[#888888] bg-white hover:bg-[#F2F2F2] transition-colors"
+            className="flex-1 h-11 border-2 border-[#EEEEEE] rounded-xl text-sm text-[#888888] bg-white hover:bg-[#F8F8F8] active:scale-[0.98]"
           >
             Saltar
           </button>
           <button
             onClick={handleGuardar}
             disabled={loading || !respuesta.trim()}
-            className="flex-2 flex-[2] h-10 bg-[#141414] text-white text-sm font-medium rounded-md hover:bg-[#333333] transition-colors disabled:opacity-50"
+            className="flex-[2] h-11 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40"
           >
-            {loading ? 'Guardando...' : indice < preguntas.length - 1 ? 'Guardar y seguir →' : 'Finalizar tópico →'}
+            {loading ? 'Guardando...' : indice < preguntas.length - 1 ? 'Guardar y seguir →' : 'Finalizar →'}
           </button>
         </div>
       </div>

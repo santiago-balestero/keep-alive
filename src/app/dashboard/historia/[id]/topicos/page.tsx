@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
+import Header from '@/components/Header'
 
 type Topico = {
   id: number
@@ -58,17 +58,12 @@ export default function SeleccionTopicos() {
 
   return (
     <main className="min-h-screen bg-[#F5F5F5]">
-      <header className="bg-white border-b border-[#DDDDDD] px-6 py-3 flex items-center justify-between">
-        <Image src="/logo.jpg" alt="Keep Alive" width={60} height={60} className="object-contain" />
-        <button onClick={() => router.back()} className="text-sm text-[#6B8FC2] hover:underline">
-          ← Volver
-        </button>
-      </header>
+      <Header backUrl={`/dashboard/historia/${historiaId}`} backLabel="Historia" />
 
-      <div className="max-w-lg mx-auto px-6 py-8 flex flex-col gap-6">
+      <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
         <div>
-          <h1 className="text-xl font-medium text-[#141414]">Elegí los tópicos</h1>
-          <p className="text-sm text-[#888888] mt-1">Seleccioná los temas que querés incluir en la historia</p>
+          <h1 className="text-2xl font-medium text-[#141414]">Elegí los tópicos</h1>
+          <p className="text-sm text-[#888888] mt-1">Seleccioná los temas que querés incluir</p>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -78,11 +73,13 @@ export default function SeleccionTopicos() {
               <button
                 key={t.id}
                 onClick={() => toggleTopico(t.id)}
-                className={`flex items-center gap-3 p-4 rounded-xl border bg-white text-left transition-colors ${
-                  activo ? 'border-[#141414]' : 'border-[#DDDDDD] hover:border-[#6B8FC2]'
+                className={`flex items-center gap-4 p-4 rounded-2xl border-2 bg-white text-left transition-all active:scale-[0.99] ${
+                  activo
+                    ? 'border-[#141414] shadow-sm'
+                    : 'border-[#EEEEEE] hover:border-[#CCCCCC]'
                 }`}
               >
-                <div className={`w-5 h-5 rounded flex-shrink-0 border flex items-center justify-center transition-colors ${
+                <div className={`w-5 h-5 rounded-md flex-shrink-0 border-2 flex items-center justify-center transition-all ${
                   activo ? 'bg-[#141414] border-[#141414]' : 'border-[#DDDDDD]'
                 }`}>
                   {activo && (
@@ -97,14 +94,14 @@ export default function SeleccionTopicos() {
           })}
         </div>
 
-        <div className="flex items-center justify-between sticky bottom-6">
+        <div className="sticky bottom-6 flex items-center justify-between bg-white border border-[#EEEEEE] rounded-2xl px-4 py-3 shadow-sm">
           <span className="text-sm text-[#888888]">
             {seleccionados.length} tópico{seleccionados.length !== 1 ? 's' : ''} seleccionado{seleccionados.length !== 1 ? 's' : ''}
           </span>
           <button
             onClick={handleSubmit}
             disabled={seleccionados.length === 0 || loading}
-            className="h-10 px-6 bg-[#141414] text-white text-sm font-medium rounded-md hover:bg-[#333333] transition-colors disabled:opacity-50"
+            className="h-9 px-5 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40"
           >
             {loading ? 'Guardando...' : 'Empezar →'}
           </button>
