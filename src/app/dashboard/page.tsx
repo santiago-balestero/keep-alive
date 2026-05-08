@@ -26,8 +26,10 @@ export default function Dashboard() {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const raw = user.user_metadata?.nombre || user.email?.split('@')[0] || ''
-        setUserName(raw.charAt(0).toUpperCase() + raw.slice(1))
+const nombre = user.user_metadata?.nombre
+const emailPrefix = user.email?.split('@')[0] || ''
+const raw = nombre || emailPrefix.replace(/[._-]/g, ' ')
+setUserName(raw.charAt(0).toUpperCase() + raw.slice(1))
       }
       const { data } = await supabase
         .from('historias')
