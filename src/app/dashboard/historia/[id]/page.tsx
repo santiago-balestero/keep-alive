@@ -29,6 +29,8 @@ export default function DetalleHistoria() {
   const [historia, setHistoria] = useState<Historia | null>(null)
   const [progreso, setProgreso] = useState<ProgresoTopico[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
   const supabase = createClient()
   const router = useRouter()
   const params = useParams()
@@ -66,7 +68,7 @@ export default function DetalleHistoria() {
 
           const idsPreguntas = new Set(preguntasTopico?.map((p) => p.id) || [])
           const respondidas = respuestasData?.filter((r) => idsPreguntas.has(r.id_pregunta)).length || 0
-
+        
           return {
             topico: t,
             total: preguntasTopico?.length || 0,
@@ -87,6 +89,15 @@ export default function DetalleHistoria() {
   const porcentaje = totalPreguntas > 0 ? Math.round((totalRespondidas / totalPreguntas) * 100) : 0
   const primerTopicoIncompleto = progreso.find((p) => p.respondidas < p.total)
 
+  const handleEliminar = async () => {
+    setEliminando(true)
+    await supabase
+      .from('historias')
+      .delete()
+      .eq('id', historiaId)
+    router.push('/dashboard')
+  }
+  
   if (loading) return (
     <main className="min-h-screen bg-[#F5F5F5]">
       <Header backUrl="/dashboard" backLabel="Inicio" />
@@ -164,6 +175,7 @@ export default function DetalleHistoria() {
               {progreso.map(({ topico, total, respondidas }) => {
                 const pct = total > 0 ? Math.round((respondidas / total) * 100) : 0
                 const completo = respondidas === total && total > 0
+                
                 return (
                   <button
                     key={topico.id}
@@ -219,7 +231,42 @@ export default function DetalleHistoria() {
               Responder preguntas →
             </button>
           )}
+          <button
+            onClick={() => setConfirmarEliminar(true)}
+            className="w-full h-11 border-2 border-red-100 rounded-xl text-sm text-red-400 bg-white hover:bg-red-50 active:scale-[0.98]"
+          >
+            Eliminar historia
+          </button>
         </div>
+
+        {/* Modal confirmar eliminar */}
+        {confirmarEliminar && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4 shadow-xl">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-base font-medium text-[#141414]">Eliminar historia</h2>
+                <p className="text-sm text-[#888888]">
+                  ¿Estás seguro que querés eliminar <strong className="text-[#141414]">{historia.titulo}</strong>? Esta acción no se puede deshacer.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmarEliminar(false)}
+                  className="flex-1 h-11 border-2 border-[#EEEEEE] rounded-xl text-sm text-[#4A4A4A] hover:bg-[#F8F8F8] active:scale-[0.98]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleEliminar}
+                  disabled={eliminando}
+                  className="flex-1 h-11 bg-red-500 text-white text-sm font-medium rounded-xl hover:bg-red-600 active:scale-[0.98] disabled:opacity-50"
+                >
+                  {eliminando ? 'Eliminando...' : 'Eliminar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   )
