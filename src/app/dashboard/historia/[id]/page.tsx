@@ -202,25 +202,31 @@ export default function DetalleHistoria() {
         </div>
 
         {/* Acciones */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => router.push(`/dashboard/historia/${historiaId}/vista-previa`)}
-            className="flex-1 h-10 border border-[#DDDDDD] rounded-md text-sm text-[#4A4A4A] bg-white hover:bg-[#F2F2F2] transition-colors"
-          >
-            Ver historia
-          </button>
-          <button
-            onClick={() => {
-              const primerTopico = progreso.find((p) => p.respondidas < p.total)
-              if (primerTopico) {
-                router.push(`/dashboard/historia/${historiaId}/preguntas/${primerTopico.topico.id}`)
-              }
-            }}
-            className="flex-[2] h-10 bg-[#141414] text-white text-sm font-medium rounded-md hover:bg-[#333333] transition-colors"
-          >
-            Responder preguntas →
-          </button>
-        </div>
+<div className="flex gap-3">
+  <button
+    onClick={() => router.push(`/dashboard/historia/${historiaId}/colaboradores`)}
+    className="flex-1 h-10 border border-[#DDDDDD] rounded-md text-sm text-[#4A4A4A] bg-white hover:bg-[#F2F2F2] transition-colors"
+  >
+    Colaboradores
+  </button>
+  <button
+    onClick={() => router.push(`/dashboard/historia/${historiaId}/vista-previa`)}
+    className="flex-1 h-10 border border-[#DDDDDD] rounded-md text-sm text-[#4A4A4A] bg-white hover:bg-[#F2F2F2] transition-colors"
+  >
+    Ver historia
+  </button>
+</div>
+<button
+  onClick={() => {
+    const primerTopico = progreso.find((p) => p.respondidas < p.total)
+    if (primerTopico) {
+      router.push(`/dashboard/historia/${historiaId}/preguntas/${primerTopico.topico.id}`)
+    }
+  }}
+  className="w-full h-10 bg-[#141414] text-white text-sm font-medium rounded-md hover:bg-[#333333] transition-colors"
+>
+  Responder preguntas →
+</button>
 
       </div>
     </main>
