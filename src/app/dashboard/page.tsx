@@ -69,7 +69,9 @@ export default function Dashboard() {
         {/* Saludo */}
         <div>
           <p className="text-sm text-[#888888]">Hola,</p>
-          <h1 className="text-2xl font-medium text-[#141414] capitalize">{userName}</h1>
+<h1 className="text-2xl font-medium text-[#141414] capitalize">
+  {userName.replace(/([a-z])([A-Z])/g, '$1 $2')}
+</h1>
         </div>
 
         {/* Historias */}
