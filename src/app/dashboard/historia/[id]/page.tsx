@@ -68,7 +68,7 @@ export default function DetalleHistoria() {
 
           const idsPreguntas = new Set(preguntasTopico?.map((p) => p.id) || [])
           const respondidas = respuestasData?.filter((r) => idsPreguntas.has(r.id_pregunta)).length || 0
-        
+
           return {
             topico: t,
             total: preguntasTopico?.length || 0,
@@ -97,7 +97,7 @@ export default function DetalleHistoria() {
       .eq('id', historiaId)
     router.push('/dashboard')
   }
-  
+
   if (loading) return (
     <main className="min-h-screen bg-[#F5F5F5]">
       <Header backUrl="/dashboard" backLabel="Inicio" />
@@ -117,16 +117,24 @@ export default function DetalleHistoria() {
 
       <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
 
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-medium text-[#141414]">{historia.titulo}</h1>
-          <p className="text-sm text-[#888888]">
-            {historia.tipo === 'autobiografia'
-              ? 'Autobiografía'
-              : `Biografía de regalo · ${historia.nombre_protagonista}`}
-          </p>
-          {historia.descripcion && (
-            <p className="text-xs text-[#AAAAAA] mt-1">{historia.descripcion}</p>
-          )}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-medium text-[#141414]">{historia.titulo}</h1>
+            <p className="text-sm text-[#888888]">
+              {historia.tipo === 'autobiografia'
+                ? 'Autobiografía'
+                : `Biografía de regalo · ${historia.nombre_protagonista}`}
+            </p>
+            {historia.descripcion && (
+              <p className="text-xs text-[#AAAAAA] mt-1">{historia.descripcion}</p>
+            )}
+          </div>
+          <button
+            onClick={() => router.push(`/dashboard/historia/${historiaId}/editar`)}
+            className="flex-shrink-0 text-xs text-[#6B8FC2] hover:underline mt-1"
+          >
+            Editar
+          </button>
         </div>
 
         {/* Progreso general */}
@@ -175,7 +183,7 @@ export default function DetalleHistoria() {
               {progreso.map(({ topico, total, respondidas }) => {
                 const pct = total > 0 ? Math.round((respondidas / total) * 100) : 0
                 const completo = respondidas === total && total > 0
-                
+
                 return (
                   <button
                     key={topico.id}
