@@ -77,7 +77,7 @@ export default function EditarHistoria() {
     <main className="min-h-screen bg-[#F5F5F5]">
       <Header backUrl={`/dashboard/historia/${historiaId}`} backLabel="Historia" />
 
-      <div className="max-w-lg mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-2xl mx-auto px-6 py-8">
         <h1 className="text-2xl font-medium text-[#141414] mb-8">Editar historia</h1>
 
         <form onSubmit={handleGuardar} className="flex flex-col gap-6">

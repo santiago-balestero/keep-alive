@@ -1,10 +1,15 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist } from 'next/font/google'
+import { Lora, Inter } from 'next/font/google'
 import './globals.css'
 
-const geist = Geist({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-geist',
+  variable: '--font-inter',
+})
+
+const lora = Lora({
+  subsets: ['latin'],
+  variable: '--font-lora',
 })
 
 export const metadata: Metadata = {
@@ -26,7 +31,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={`${geist.variable} font-sans antialiased overflow-x-hidden`}>
+      <body className={`${inter.variable} ${lora.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

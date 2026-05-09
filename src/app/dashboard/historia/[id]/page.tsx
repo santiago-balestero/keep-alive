@@ -101,7 +101,7 @@ export default function DetalleHistoria() {
   if (loading) return (
     <main className="min-h-screen bg-[#F5F5F5]">
       <Header backUrl="/dashboard" backLabel="Inicio" />
-      <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 flex flex-col gap-3">
+      <div className="max-w-2xl mx-auto px-6 py-8 flex flex-col gap-3">
         {[1, 2, 3].map((i) => (
           <div key={i} className="bg-white rounded-2xl h-20 animate-pulse border border-[#EEEEEE]" />
         ))}
@@ -115,7 +115,7 @@ export default function DetalleHistoria() {
     <main className="min-h-screen bg-[#F5F5F5]">
       <Header backUrl="/dashboard" backLabel="Inicio" />
 
-      <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
+      <div className="max-w-2xl mx-auto px-6 py-8 flex flex-col gap-6">
 
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">

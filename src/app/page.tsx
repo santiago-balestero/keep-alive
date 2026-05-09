@@ -36,32 +36,53 @@ export default function LoginPage() {
         setMessage('Revisá tu email para confirmar tu cuenta.')
       }
     }
-
     setLoading(false)
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-[360px] flex flex-col items-center gap-6">
+    <main className="min-h-screen bg-white flex flex-col sm:flex-row">
 
-        {/* Logo */}
+      {/* Panel izquierdo — solo desktop */}
+      <div className="hidden sm:flex w-[420px] flex-shrink-0 bg-[#141414] flex-col items-center justify-center p-12 gap-8">
         <Image
           src="/logo.jpg"
           alt="Keep Alive"
-          width={100}
-          height={100}
+          width={120}
+          height={120}
           className="object-contain rounded-2xl"
         />
+        <div className="text-center flex flex-col gap-3">
+          <h2 className="text-2xl font-light text-white" style={{ fontFamily: 'var(--font-lora)' }}>
+            Tu historia,<br />tu legado.
+          </h2>
+          <p className="text-sm text-white/40 leading-relaxed">
+            Preservá y compartí las historias de vida que merecen ser recordadas para siempre.
+          </p>
+        </div>
+      </div>
 
-        {/* Card */}
-        <div className="w-full bg-white rounded-3xl p-6 flex flex-col gap-4 shadow-sm">
+      {/* Panel derecho — formulario */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 sm:px-16">
 
-          <div className="text-center pb-1">
-            <h1 className="text-xl font-semibold text-[#141414]">
+        {/* Logo mobile */}
+        <div className="sm:hidden mb-8 flex flex-col items-center gap-4">
+          <Image
+            src="/logo.jpg"
+            alt="Keep Alive"
+            width={80}
+            height={80}
+            className="object-contain rounded-2xl"
+          />
+          <p className="text-sm text-[#888888]">Tu historia, tu legado.</p>
+        </div>
+
+        <div className="w-full max-w-sm flex flex-col gap-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-[#141414]">
               {isLogin ? 'Bienvenido' : 'Crear cuenta'}
             </h1>
             <p className="text-sm text-[#888888] mt-1">
-              {isLogin ? 'Ingresá a tu cuenta' : 'Completá tus datos para empezar'}
+              {isLogin ? 'Ingresá a tu cuenta para continuar' : 'Completá tus datos para empezar'}
             </p>
           </div>
 
@@ -72,7 +93,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-12 px-4 text-base border border-[#EEEEEE] rounded-2xl bg-[#F8F8F8] text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] focus:bg-white"
+              className="w-full h-12 px-4 text-sm border border-[#E8E8E8] rounded-xl bg-[#FAFAFA] text-[#141414] focus:outline-none focus:border-[#6B8FC2] focus:bg-white transition-colors"
             />
             <input
               type="password"
@@ -80,24 +101,24 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-12 px-4 text-base border border-[#EEEEEE] rounded-2xl bg-[#F8F8F8] text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] focus:bg-white"
+              className="w-full h-12 px-4 text-sm border border-[#E8E8E8] rounded-xl bg-[#FAFAFA] text-[#141414] focus:outline-none focus:border-[#6B8FC2] focus:bg-white transition-colors"
             />
 
             {error && (
-              <div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3">
-                <p className="text-sm text-red-500 text-center">{error}</p>
+              <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                <p className="text-sm text-red-500">{error}</p>
               </div>
             )}
             {message && (
-              <div className="bg-[#E8EFF8] border border-[#D0DFF0] rounded-2xl px-4 py-3">
-                <p className="text-sm text-[#6B8FC2] text-center">{message}</p>
+              <div className="bg-[#EEF3FA] border border-[#D0DFF0] rounded-xl px-4 py-3">
+                <p className="text-sm text-[#6B8FC2]">{message}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-[#141414] text-white text-base font-medium rounded-2xl hover:bg-[#333333] active:scale-[0.98] disabled:opacity-50 mt-1"
+              className="w-full h-12 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#2A2A2A] active:scale-[0.98] disabled:opacity-50 transition-all mt-1"
             >
               {loading ? 'Cargando...' : isLogin ? 'Ingresar' : 'Crear cuenta'}
             </button>
@@ -114,7 +135,7 @@ export default function LoginPage() {
               provider: 'google',
               options: { redirectTo: `${window.location.origin}/dashboard` }
             })}
-            className="w-full h-12 border border-[#EEEEEE] rounded-2xl text-base text-[#4A4A4A] bg-[#F8F8F8] hover:bg-[#F0F0F0] active:scale-[0.98] flex items-center justify-center gap-2"
+            className="w-full h-12 border border-[#E8E8E8] rounded-xl text-sm text-[#4A4A4A] bg-white hover:bg-[#FAFAFA] active:scale-[0.98] flex items-center justify-center gap-2 transition-all shadow-sm"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -125,25 +146,23 @@ export default function LoginPage() {
             Continuar con Google
           </button>
 
-          <div className="flex flex-col items-center gap-2 pt-1">
+          <div className="flex flex-col items-center gap-2">
             <button
               onClick={() => { setIsLogin(!isLogin); setError(''); setMessage('') }}
-              className="text-sm text-[#6B8FC2]"
+              className="text-sm text-[#6B8FC2] hover:underline"
             >
               {isLogin ? '¿No tenés cuenta? Registrate' : '¿Ya tenés cuenta? Ingresá'}
             </button>
             {isLogin && (
               <button
                 onClick={() => router.push('/recuperar-contrasena')}
-                className="text-sm text-[#BBBBBB]"
+                className="text-sm text-[#BBBBBB] hover:text-[#888888] transition-colors"
               >
                 Olvidé mi contraseña
               </button>
             )}
           </div>
         </div>
-
-        <p className="text-xs text-[#BBBBBB] text-center">Tu historia, tu legado.</p>
       </div>
     </main>
   )

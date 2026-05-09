@@ -188,7 +188,7 @@ export default function Preguntas() {
     <main className="min-h-screen bg-[#F5F5F5]">
       <Header backUrl={`/dashboard/historia/${historiaId}`} backLabel="Historia" />
 
-      <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
+      <div className="max-w-2xl mx-auto px-6 py-8 flex flex-col gap-6">
 
         {/* Progreso */}
         <div className="flex flex-col gap-2">
