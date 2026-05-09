@@ -60,7 +60,7 @@ export default function SeleccionTopicos() {
     <main className="min-h-screen bg-[#F5F5F5]">
       <Header backUrl={`/dashboard/historia/${historiaId}`} backLabel="Historia" />
 
-      <div className="max-w-2xl mx-auto px-6 py-8 flex flex-col gap-6">
+      <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
         <div>
           <h1 className="text-2xl font-medium text-[#141414]">Elegí los tópicos</h1>
           <p className="text-sm text-[#888888] mt-1">Seleccioná los temas que querés incluir</p>

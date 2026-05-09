@@ -31,6 +31,7 @@ export default function Perfil() {
       const { count } = await supabase
         .from('historias')
         .select('*', { count: 'exact', head: true })
+        .eq('id_autor', user?.id)
 
       setTotalHistorias(count || 0)
     }

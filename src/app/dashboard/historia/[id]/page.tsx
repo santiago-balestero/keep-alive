@@ -101,7 +101,7 @@ export default function DetalleHistoria() {
   if (loading) return (
     <main className="min-h-screen bg-[#F5F5F5]">
       <Header backUrl="/dashboard" backLabel="Inicio" />
-      <div className="max-w-2xl mx-auto px-6 py-8 flex flex-col gap-3">
+      <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {[1, 2, 3].map((i) => (
           <div key={i} className="bg-white rounded-2xl h-20 animate-pulse border border-[#EEEEEE]" />
         ))}
@@ -115,8 +115,7 @@ export default function DetalleHistoria() {
     <main className="min-h-screen bg-[#F5F5F5]">
       <Header backUrl="/dashboard" backLabel="Inicio" />
 
-      <div className="max-w-2xl mx-auto px-6 py-8 flex flex-col gap-6">
-
+      <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-medium text-[#141414]">{historia.titulo}</h1>

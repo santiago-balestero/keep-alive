@@ -47,21 +47,26 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-[#FAFAFA]">
+    <main style={{ minHeight: '100vh', background: '#FAFAFA' }}>
+
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-[#F0F0F0]">
-        <div className="max-w-2xl mx-auto px-6 h-16 flex items-center justify-between">
+      <header className="page-header">
+        <div className="page-header-inner">
           <Image
             src="/logo.jpg"
             alt="Keep Alive"
-            width={38}
-            height={38}
-            className="object-contain rounded-xl cursor-pointer"
+            width={36}
+            height={36}
+            style={{ objectFit: 'contain', borderRadius: 12, cursor: 'pointer' }}
             onClick={() => router.push('/dashboard')}
           />
           <button
             onClick={() => router.push('/dashboard/perfil')}
-            className="w-9 h-9 rounded-full bg-[#141414] flex items-center justify-center text-white text-sm font-medium hover:bg-[#333333] transition-colors"
+            style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: '#141414', color: 'white',
+              fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer'
+            }}
           >
             {userName ? userName[0].toUpperCase() : 'U'}
           </button>
@@ -69,73 +74,95 @@ export default function Dashboard() {
       </header>
 
       {/* Contenido */}
-      <div className="max-w-2xl mx-auto px-6 py-10 flex flex-col gap-8">
+      <div className="page-container" style={{ paddingTop: 40, paddingBottom: 40, display: 'flex', flexDirection: 'column', gap: 32 }}>
 
         {/* Saludo */}
-        <div className="flex items-center justify-between">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <p className="text-sm text-[#888888]">Hola,</p>
-            <h1 className="text-2xl font-semibold text-[#141414]">{userName}</h1>
+            <p style={{ fontSize: 14, color: '#888888' }}>Hola,</p>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: '#141414' }}>{userName}</h1>
           </div>
           <button
             onClick={() => router.push('/dashboard/nueva-historia')}
-            className="h-10 px-5 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#2A2A2A] active:scale-[0.98] transition-all"
+            style={{
+              flexShrink: 0, height: 40, padding: '0 20px',
+              background: '#141414', color: 'white',
+              fontSize: 14, fontWeight: 500,
+              border: 'none', borderRadius: 12, cursor: 'pointer'
+            }}
           >
             + Nueva historia
           </button>
         </div>
 
         {/* Historias */}
-        <section className="flex flex-col gap-4">
-          <h2 className="text-xs font-medium text-[#AAAAAA] uppercase tracking-widest">
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontSize: 11, fontWeight: 500, color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             Mis historias
-          </h2>
+          </p>
 
           {loading ? (
-            <div className="flex flex-col gap-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[1, 2].map((i) => (
-                <div key={i} className="rounded-2xl h-24 animate-pulse bg-[#F0F0F0]" />
+                <div key={i} style={{ borderRadius: 16, height: 96, background: '#F0F0F0' }} />
               ))}
             </div>
           ) : historias.length === 0 ? (
-            <div className="rounded-2xl border border-[#EEEEEE] p-12 flex flex-col items-center gap-4 text-center bg-white shadow-sm">
-              <span className="text-5xl">📖</span>
+            <div style={{
+              borderRadius: 16, border: '1px solid #EEEEEE',
+              padding: 48, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 16, textAlign: 'center', background: 'white'
+            }}>
+              <span style={{ fontSize: 48 }}>📖</span>
               <div>
-                <p className="text-base font-medium text-[#141414]">Todavía no tenés historias</p>
-                <p className="text-sm text-[#AAAAAA] mt-1 max-w-xs mx-auto">
+                <p style={{ fontSize: 15, fontWeight: 500, color: '#141414' }}>Todavía no tenés historias</p>
+                <p style={{ fontSize: 13, color: '#AAAAAA', marginTop: 4 }}>
                   Creá tu primera historia y empezá a construir tu legado familiar.
                 </p>
               </div>
               <button
                 onClick={() => router.push('/dashboard/nueva-historia')}
-                className="mt-2 h-10 px-6 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#2A2A2A] active:scale-[0.98] transition-all"
+                style={{
+                  marginTop: 8, height: 40, padding: '0 24px',
+                  background: '#141414', color: 'white',
+                  fontSize: 14, fontWeight: 500,
+                  border: 'none', borderRadius: 12, cursor: 'pointer'
+                }}
               >
                 + Crear historia
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {historias.map((h) => (
                 <div
                   key={h.id}
                   onClick={() => router.push(`/dashboard/historia/${h.id}`)}
-                  className="bg-white rounded-2xl p-5 flex flex-col gap-2 cursor-pointer hover:shadow-md active:scale-[0.99] transition-all border border-[#EEEEEE] shadow-sm"
+                  style={{
+                    background: 'white', borderRadius: 16,
+                    padding: 20, cursor: 'pointer',
+                    border: '1px solid #EEEEEE',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                    display: 'flex', flexDirection: 'column', gap: 8
+                  }}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-base font-semibold text-[#141414] leading-snug">{h.titulo}</h3>
-                    <span className={`text-xs px-2.5 py-1 rounded-full flex-shrink-0 font-medium ${
-                      h.estado === 'completada'
-                        ? 'bg-[#EEF3FA] text-[#6B8FC2]'
-                        : 'bg-[#F5F5F5] text-[#888888]'
-                    }`}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: '#141414', lineHeight: 1.3 }}>{h.titulo}</h3>
+                    <span style={{
+                      fontSize: 11, padding: '4px 10px', borderRadius: 20, flexShrink: 0, fontWeight: 500,
+                      background: h.estado === 'completada' ? '#EEF3FA' : '#F5F5F5',
+                      color: h.estado === 'completada' ? '#6B8FC2' : '#888888'
+                    }}>
                       {h.estado === 'completada' ? 'Completa' : 'En progreso'}
                     </span>
                   </div>
-                  <p className="text-sm text-[#888888]">
+                  <p style={{ fontSize: 13, color: '#888888' }}>
                     {h.tipo === 'autobiografia' ? 'Autobiografía' : `Regalo · ${h.nombre_protagonista}`}
                   </p>
                   {h.descripcion && (
-                    <p className="text-xs text-[#AAAAAA] line-clamp-1">{h.descripcion}</p>
+                    <p style={{ fontSize: 12, color: '#AAAAAA', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                      {h.descripcion}
+                    </p>
                   )}
                 </div>
               ))}
@@ -145,7 +172,7 @@ export default function Dashboard() {
 
         <button
           onClick={handleLogout}
-          className="text-xs text-[#CCCCCC] hover:text-[#888888] transition-colors text-center"
+          style={{ fontSize: 12, color: '#CCCCCC', background: 'none', border: 'none', cursor: 'pointer' }}
         >
           Cerrar sesión
         </button>

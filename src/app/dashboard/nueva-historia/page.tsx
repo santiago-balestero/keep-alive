@@ -48,7 +48,7 @@ export default function NuevaHistoria() {
     <main className="min-h-screen bg-[#F5F5F5]">
       <Header backUrl="/dashboard" backLabel="Inicio" />
 
-      <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32 }}>
         <h1 className="text-2xl font-medium text-[#141414] mb-8">Nueva historia</h1>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
