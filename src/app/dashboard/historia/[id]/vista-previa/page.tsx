@@ -35,6 +35,7 @@ type Capitulo = {
   preguntas: Pregunta[]
   respuestas: Record<number, string>
   imagenes: Record<number, string>
+  narrativa?: string
 }
 
 export default function VistaPrevia() {
@@ -43,6 +44,9 @@ export default function VistaPrevia() {
   const [capituloActivo, setCapituloActivo] = useState(-1) // -1 = portada
   const [loading, setLoading] = useState(true)
   const [exportando, setExportando] = useState(false)
+  const [generando, setGenerando] = useState(false)
+  const [generandoCapitulo, setGenerandoCapitulo] = useState<number | null>(null)
+  const [modoNarrativa, setModoNarrativa] = useState(false)
   const libroRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
   const router = useRouter()
@@ -102,6 +106,86 @@ export default function VistaPrevia() {
 
     fetchData()
   }, [historiaId])
+
+  const generarNarrativaCapitulo = async (cap: Capitulo, historia: Historia): Promise<string> => {
+    const esAutobiografia = historia.tipo === 'autobiografia'
+    const protagonista = historia.nombre_protagonista || 'el protagonista'
+
+    const preguntasYRespuestas = cap.preguntas
+      .map((p) => {
+        const pregunta = esAutobiografia ? p.texto_es : p.texto_es_tercera
+        const respuesta = cap.respuestas[p.id]
+        return `Pregunta: ${pregunta}\nRespuesta: ${respuesta}`
+      })
+      .join('\n\n')
+
+    const prompt = esAutobiografia
+      ? `Sos un escritor profesional especializado en autobiografías y libros de vida. Tu tarea es transformar las siguientes respuestas de una persona sobre su vida en una narrativa literaria fluida, cálida y emotiva, escrita en primera persona.
+
+El capítulo se llama: "${cap.topico.nombre_es}"
+
+Respuestas del protagonista:
+${preguntasYRespuestas}
+
+Escribí un texto narrativo de 3 a 5 párrafos que:
+- Use primera persona (yo, mi, mis)
+- Sea fluido y literario, no una lista de respuestas
+- Mantenga la voz y los detalles reales de la persona
+- Sea cálido, emotivo y personal
+- Conecte los diferentes temas de forma natural
+- No mencione las preguntas ni que fue una entrevista
+
+Escribí solo el texto narrativo, sin títulos ni introducción.`
+      : `Sos un escritor profesional especializado en biografías y libros de vida. Tu tarea es transformar las siguientes respuestas sobre la vida de ${protagonista} en una narrativa literaria fluida, cálida y emotiva, escrita en tercera persona.
+
+El capítulo se llama: "${cap.topico.nombre_es}"
+
+Respuestas sobre ${protagonista}:
+${preguntasYRespuestas}
+
+Escribí un texto narrativo de 3 a 5 párrafos que:
+- Use tercera persona (él/ella, su, sus — adaptá según corresponda)
+- Refierete al protagonista por su nombre: ${protagonista}
+- Sea fluido y literario, no una lista de respuestas
+- Mantenga los detalles reales de la persona
+- Sea cálido, emotivo y personal
+- Conecte los diferentes temas de forma natural
+- No mencione las preguntas ni que fue una entrevista
+
+Escribí solo el texto narrativo, sin títulos ni introducción.`
+
+   const response = await fetch('/api/generar-narrativa', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ prompt }),
+})
+
+const data = await response.json()
+return data.texto || ''
+  }
+
+  const handleGenerarTodo = async () => {
+    if (!historia) return
+    setGenerando(true)
+    setModoNarrativa(true)
+
+    const capitulosActualizados = [...capitulos]
+    for (let i = 0; i < capitulosActualizados.length; i++) {
+      setGenerandoCapitulo(i)
+      const cap = capitulosActualizados[i]
+      if (!cap.narrativa) {
+        const narrativa = await generarNarrativaCapitulo(cap, historia)
+        capitulosActualizados[i] = { ...cap, narrativa }
+        setCapitulos([...capitulosActualizados])
+      }
+    }
+
+    setGenerandoCapitulo(null)
+    setGenerando(false)
+    if (capituloActivo === -1 && capitulosActualizados.length > 0) {
+      setCapituloActivo(0)
+    }
+  }
 
   const handleExportarPDF = async () => {
     setExportando(true)
@@ -240,28 +324,58 @@ export default function VistaPrevia() {
             ← Historia
           </button>
         </div>
-        <button
-          onClick={handleExportarPDF}
-          disabled={exportando}
-          className="h-9 px-4 bg-white text-[#141414] text-sm font-medium rounded-xl hover:bg-white/90 active:scale-[0.98] disabled:opacity-50 flex items-center gap-2"
-        >
-          {exportando ? (
-            <>
-              <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".3"/>
-                <path d="M21 12a9 9 0 00-9-9"/>
-              </svg>
-              Exportando...
-            </>
-          ) : (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-              </svg>
-              Exportar PDF
-            </>
+        <div className="flex items-center gap-2">
+          {/* Toggle modo */}
+          {capitulos.length > 0 && (
+            <div className="flex items-center bg-white/10 rounded-xl p-1 gap-1">
+              <button
+                onClick={() => setModoNarrativa(false)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  !modoNarrativa
+                    ? 'bg-white text-[#141414]'
+                    : 'text-white/50 hover:text-white'
+                }`}
+              >
+                Original
+              </button>
+              <button
+                onClick={() => {
+                  setModoNarrativa(true)
+                  if (!capitulos.some(c => c.narrativa)) handleGenerarTodo()
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  modoNarrativa
+                    ? 'bg-white text-[#141414]'
+                    : 'text-white/50 hover:text-white'
+                }`}
+              >
+                {generando ? 'Generando...' : '✨ Narrativa'}
+              </button>
+            </div>
           )}
-        </button>
+          <button
+            onClick={handleExportarPDF}
+            disabled={exportando}
+            className="h-9 px-4 bg-white text-[#141414] text-sm font-medium rounded-xl hover:bg-white/90 active:scale-[0.98] disabled:opacity-50 flex items-center gap-2"
+          >
+            {exportando ? (
+              <>
+                <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".3"/>
+                  <path d="M21 12a9 9 0 00-9-9"/>
+                </svg>
+                Exportando...
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                Exportar PDF
+              </>
+            )}
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 flex flex-col items-center py-8 px-4 gap-6">
@@ -328,21 +442,50 @@ export default function VistaPrevia() {
               <div className="px-8 py-5 border-b border-[#EEEEEE] flex items-center gap-3">
                 <div className="w-1 h-6 bg-[#6B8FC2] rounded-full" />
                 <h2 className="text-lg font-medium text-[#141414]">{capActual.topico.nombre_es}</h2>
+                {modoNarrativa && generandoCapitulo === capituloActivo && (
+                  <span className="ml-auto text-xs text-[#6B8FC2] flex items-center gap-1.5">
+                    <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".3"/>
+                      <path d="M21 12a9 9 0 00-9-9"/>
+                    </svg>
+                    Generando narrativa...
+                  </span>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row">
                 {/* Texto */}
                 <div className="flex-1 px-8 py-6 flex flex-col gap-6">
-                  {capActual.preguntas.map((p) => (
-                    <div key={p.id} className="flex flex-col gap-2">
-                      <p className="text-xs text-[#6B8FC2] italic">
-                        {historia.tipo === 'autobiografia' ? p.texto_es : p.texto_es_tercera}
-                      </p>
-                      <p className="text-sm text-[#141414] leading-relaxed">
-                        {capActual.respuestas[p.id]}
-                      </p>
-                    </div>
-                  ))}
+                  {modoNarrativa ? (
+                    capActual.narrativa ? (
+                      <div className="flex flex-col gap-4">
+                        {capActual.narrativa.split('\n\n').filter(Boolean).map((parrafo, i) => (
+                          <p key={i} className="text-base text-[#1A1A1A] leading-[1.85] tracking-wide">
+                            {parrafo}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 gap-3">
+                        <svg className="animate-spin text-[#6B8FC2]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".3"/>
+                          <path d="M21 12a9 9 0 00-9-9"/>
+                        </svg>
+                        <p className="text-sm text-[#888888]">Generando narrativa...</p>
+                      </div>
+                    )
+                  ) : (
+                    capActual.preguntas.map((p) => (
+                      <div key={p.id} className="flex flex-col gap-2">
+                        <p className="text-xs text-[#6B8FC2] italic">
+                          {historia.tipo === 'autobiografia' ? p.texto_es : p.texto_es_tercera}
+                        </p>
+                        <p className="text-sm text-[#141414] leading-relaxed">
+                          {capActual.respuestas[p.id]}
+                        </p>
+                      </div>
+                    ))
+                  )}
                 </div>
 
                 {/* Fotos */}
