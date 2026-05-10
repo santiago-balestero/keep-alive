@@ -111,13 +111,14 @@ export default function VistaPrevia() {
     const esAutobiografia = historia.tipo === 'autobiografia'
     const protagonista = historia.nombre_protagonista || 'el protagonista'
 
-    const preguntasYRespuestas = cap.preguntas
-      .map((p) => {
-        const pregunta = esAutobiografia ? p.texto_es : p.texto_es_tercera
-        const respuesta = cap.respuestas[p.id]
-        return `Pregunta: ${pregunta}\nRespuesta: ${respuesta}`
-      })
-      .join('\n\n')
+   const preguntasYRespuestas = cap.preguntas
+  .map((p) => {
+    const pregunta = esAutobiografia ? p.texto_es : p.texto_es_tercera
+    const respuesta = cap.respuestas[p.id]
+    const tieneImagen = !!cap.imagenes[p.id]
+    return `Pregunta: ${pregunta}\nRespuesta: ${respuesta}${tieneImagen ? '\n[Esta respuesta tiene una foto adjunta]' : ''}`
+  })
+  .join('\n\n')
 
     const prompt = esAutobiografia
       ? `Sos un escritor profesional especializado en autobiografías y libros de vida. Tu tarea es transformar las siguientes respuestas de una persona sobre su vida en una narrativa literaria fluida, cálida y emotiva, escrita en primera persona.
@@ -134,6 +135,7 @@ Escribí un texto narrativo de 3 a 5 párrafos que:
 - Sea cálido, emotivo y personal
 - Conecte los diferentes temas de forma natural
 - No mencione las preguntas ni que fue una entrevista
+- Cuando una respuesta tiene [Esta respuesta tiene una foto adjunta], mencioná la foto de forma natural en la narrativa, con frases como "como muestra aquella foto", "en esa imagen se puede ver", "esa foto captura el momento..." o similar
 
 Escribí solo el texto narrativo, sin títulos ni introducción.`
       : `Sos un escritor profesional especializado en biografías y libros de vida. Tu tarea es transformar las siguientes respuestas sobre la vida de ${protagonista} en una narrativa literaria fluida, cálida y emotiva, escrita en tercera persona.
@@ -151,6 +153,7 @@ Escribí un texto narrativo de 3 a 5 párrafos que:
 - Sea cálido, emotivo y personal
 - Conecte los diferentes temas de forma natural
 - No mencione las preguntas ni que fue una entrevista
+- Cuando una respuesta tiene [Esta respuesta tiene una foto adjunta], mencioná la foto de forma natural en la narrativa, con frases como "como muestra aquella foto", "en esa imagen se puede ver", "esa foto captura el momento..." o similar
 
 Escribí solo el texto narrativo, sin títulos ni introducción.`
 
