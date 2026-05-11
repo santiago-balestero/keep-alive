@@ -461,12 +461,51 @@ return data.texto || ''
                 <div className="flex-1 px-8 py-6 flex flex-col gap-6">
                   {modoNarrativa ? (
                     capActual.narrativa ? (
-                      <div className="flex flex-col gap-4">
-                        {capActual.narrativa.split('\n\n').filter(Boolean).map((parrafo, i) => (
-                          <p key={i} className="text-base text-[#1A1A1A] leading-[1.85] tracking-wide">
-                            {parrafo}
-                          </p>
-                        ))}
+                      <div className="flex flex-col gap-6">
+                        {(() => {
+                          const parrafos = capActual.narrativa.split('\n\n').filter(Boolean)
+                          const fotos = capActual.preguntas.filter((p) => capActual.imagenes[p.id])
+                          const resultado: React.ReactNode[] = []
+
+                          parrafos.forEach((parrafo, i) => {
+                            resultado.push(
+                              <p key={`p-${i}`} className="text-base text-[#1A1A1A] leading-[1.85] tracking-wide">
+                                {parrafo}
+                              </p>
+                            )
+                            // Intercalar foto después de cada párrafo si hay fotos disponibles
+                            const fotoIndex = Math.floor((i / parrafos.length) * fotos.length)
+                            if (fotos[fotoIndex] && i < parrafos.length - 1 && (i + 1) % Math.max(1, Math.floor(parrafos.length / fotos.length)) === 0) {
+                              const foto = fotos.shift()
+                              if (foto) {
+                                resultado.push(
+                                  <div key={`img-${foto.id}`} className="rounded-2xl overflow-hidden">
+                                    <img
+                                      src={capActual.imagenes[foto.id]}
+                                      alt="Foto"
+                                      className="w-full object-cover max-h-80 rounded-2xl"
+                                    />
+                                  </div>
+                                )
+                              }
+                            }
+                          })
+
+                          // Fotos restantes al final
+                          fotos.forEach((foto) => {
+                            resultado.push(
+                              <div key={`img-end-${foto.id}`} className="rounded-2xl overflow-hidden">
+                                <img
+                                  src={capActual.imagenes[foto.id]}
+                                  alt="Foto"
+                                  className="w-full object-cover max-h-80 rounded-2xl"
+                                />
+                              </div>
+                            )
+                          })
+
+                          return resultado
+                        })()}
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -491,8 +530,8 @@ return data.texto || ''
                   )}
                 </div>
 
-                {/* Fotos */}
-                {capActual.preguntas.some((p) => capActual.imagenes[p.id]) && (
+                {/* Fotos — solo en modo original */}
+                {!modoNarrativa && capActual.preguntas.some((p) => capActual.imagenes[p.id]) && (
                   <div className="w-full sm:w-64 p-4 grid grid-cols-2 gap-2 content-start border-t sm:border-t-0 sm:border-l border-[#EEEEEE]">
                     {capActual.preguntas
                       .filter((p) => capActual.imagenes[p.id])

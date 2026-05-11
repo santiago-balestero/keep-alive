@@ -10,6 +10,7 @@ type Colaborador = {
   email: string
   estado: 'pendiente' | 'aceptado' | 'rechazado'
   fecha_invitacion: string
+  token: string
 }
 
 type Topico = {
@@ -89,6 +90,13 @@ export default function Colaboradores() {
     }
 
     setLoading(false)
+  }
+
+  const handleCopiarLink = (token: string) => {
+    const link = `${window.location.origin}/colaborar/${token}`
+    navigator.clipboard.writeText(link)
+    setMensaje('¡Link copiado! Compartilo por WhatsApp o como prefieras.')
+    setTimeout(() => setMensaje(''), 3000)
   }
 
   const handleEliminar = async (id: string) => {
@@ -209,6 +217,13 @@ export default function Colaboradores() {
                   <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${estadoBadge(c.estado)}`}>
                     {estadoLabel(c.estado)}
                   </span>
+                  <button
+                    onClick={() => handleCopiarLink(c.token)}
+                    className="text-xs text-[#6B8FC2] hover:underline flex-shrink-0"
+                    title="Copiar link de invitación"
+                  >
+                    Copiar link
+                  </button>
                   <button
                     onClick={() => handleEliminar(c.id)}
                     className="text-[#AAAAAA] hover:text-red-400 transition-colors flex-shrink-0 text-lg leading-none"
