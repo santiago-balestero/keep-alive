@@ -30,6 +30,9 @@ export default function Preguntas() {
   const [loading, setLoading] = useState(false)
   const [guardado, setGuardado] = useState(false)
   const [subiendoImagen, setSubiendoImagen] = useState(false)
+  const [escuchando, setEscuchando] = useState(false)
+  const [soportaVoz, setSoportaVoz] = useState(true)
+  const recognitionRef = useRef<any>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
   const router = useRouter()
@@ -86,6 +89,49 @@ export default function Preguntas() {
   const textoPregunta = historia?.tipo === 'autobiografia'
     ? preguntaActual?.texto_es
     : preguntaActual?.texto_es_tercera
+
+  const iniciarEscucha = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      setSoportaVoz(false)
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'es-AR'
+    recognition.continuous = true
+    recognition.interimResults = true
+
+    let textoBase = respuesta
+
+    recognition.onresult = (event: any) => {
+      let textoFinal = ''
+      let textoInterim = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          textoFinal += transcript + ' '
+        } else {
+          textoInterim += transcript
+        }
+      }
+      setRespuesta(textoBase + textoFinal + textoInterim)
+      if (textoFinal) textoBase = textoBase + textoFinal
+      setGuardado(false)
+    }
+
+    recognition.onerror = () => setEscuchando(false)
+    recognition.onend = () => setEscuchando(false)
+
+    recognition.start()
+    recognitionRef.current = recognition
+    setEscuchando(true)
+  }
+
+  const detenerEscucha = () => {
+    recognitionRef.current?.stop()
+    setEscuchando(false)
+  }
 
   const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -218,13 +264,39 @@ export default function Preguntas() {
 
         {/* Respuesta */}
         <div className="flex flex-col gap-2">
-          <textarea
-            value={respuesta}
-            onChange={(e) => { setRespuesta(e.target.value); setGuardado(false) }}
-            placeholder="Escribí tu respuesta acá..."
-            rows={5}
-            className="w-full px-4 py-3 text-sm border-2 border-[#EEEEEE] rounded-2xl bg-white text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] resize-none leading-relaxed"
-          />
+          <div className="relative">
+            <textarea
+              value={respuesta}
+              onChange={(e) => { setRespuesta(e.target.value); setGuardado(false) }}
+              placeholder="Escribí tu respuesta acá o usá el micrófono..."
+              rows={5}
+              className="w-full px-4 py-3 text-sm border-2 border-[#EEEEEE] rounded-2xl bg-white text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] resize-none leading-relaxed pr-14"
+            />
+            <button
+              type="button"
+              onClick={escuchando ? detenerEscucha : iniciarEscucha}
+              className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                escuchando
+                  ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                  : 'bg-[#F0F0F0] hover:bg-[#E0E0E0]'
+              }`}
+              title={escuchando ? 'Detener grabación' : 'Grabar respuesta por voz'}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={escuchando ? 'white' : '#888888'} strokeWidth="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+              </svg>
+            </button>
+          </div>
+          {escuchando && (
+            <p className="text-xs text-red-500 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              Escuchando... hablá ahora
+            </p>
+          )}
+          {!soportaVoz && (
+            <p className="text-xs text-[#AAAAAA]">Tu navegador no soporta reconocimiento de voz.</p>
+          )}
           {guardado && (
             <p className="text-xs text-[#6B8FC2] flex items-center gap-1">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
