@@ -346,31 +346,28 @@ return data.texto || ''
             const celdaX = xFotos + col * (celdaW + gap)
             const celdaY = margen + row * (celdaH + gap)
 
-            // Calcular dimensiones manteniendo aspect ratio
-            const img = new Image()
-            await new Promise<void>((resolve) => {
-              img.onload = () => resolve()
-              img.onerror = () => resolve()
-              img.src = fotosCapitulo[i]
-            })
-
-            const imgW = img.naturalWidth || 1
-            const imgH = img.naturalHeight || 1
-            const ratio = imgW / imgH
-
-            let drawW = celdaW
-            let drawH = celdaW / ratio
-
-            if (drawH > celdaH) {
-              drawH = celdaH
-              drawW = celdaH * ratio
-            }
-
-            // Centrar dentro de la celda
-            const offsetX = celdaX + (celdaW - drawW) / 2
-            const offsetY = celdaY + (celdaH - drawH) / 2
-
             try {
+              // Obtener dimensiones reales de la imagen desde el base64
+              const dimensiones = await new Promise<{w: number, h: number}>((resolve) => {
+                if (typeof window === 'undefined') return resolve({w: 1, h: 1})
+                const imgEl = document.createElement('img')
+                imgEl.onload = () => resolve({ w: imgEl.naturalWidth, h: imgEl.naturalHeight })
+                imgEl.onerror = () => resolve({ w: 1, h: 1 })
+                imgEl.src = fotosCapitulo[i]
+              })
+
+              const ratio = dimensiones.w / dimensiones.h
+              let drawW = celdaW
+              let drawH = celdaW / ratio
+
+              if (drawH > celdaH) {
+                drawH = celdaH
+                drawW = celdaH * ratio
+              }
+
+              const offsetX = celdaX + (celdaW - drawW) / 2
+              const offsetY = celdaY + (celdaH - drawH) / 2
+
               pdf.addImage(fotosCapitulo[i], 'JPEG', offsetX, offsetY, drawW, drawH)
             } catch {}
           }
