@@ -171,9 +171,9 @@ export default function ColaborarPage() {
       setSubiendoImagen(true)
       const ext = imagenFile.name.split('.').pop()
       const path = `${colaborador.id_historia}/${preguntaActual.id}_${Date.now()}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('imagenes').upload(path, imagenFile, { upsert: true })
+      const { error: uploadError } = await supabase.storage.from('images').upload(path, imagenFile, { upsert: true })
       if (!uploadError) {
-        const { data: urlData } = supabase.storage.from('imagenes').getPublicUrl(path)
+        const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
         imagenUrl = urlData.publicUrl
       }
       setSubiendoImagen(false)

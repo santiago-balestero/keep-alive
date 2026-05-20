@@ -164,12 +164,12 @@ export default function Preguntas() {
       const path = `${historiaId}/${preguntaActual.id}_${Date.now()}.${ext}`
 
       const { error: uploadError } = await supabase.storage
-        .from('imagenes')
+        .from('images')
         .upload(path, imagenFile, { upsert: true })
 
       if (!uploadError) {
         const { data: urlData } = supabase.storage
-          .from('imagenes')
+          .from('images')
           .getPublicUrl(path)
         imagenUrl = urlData.publicUrl
       }
