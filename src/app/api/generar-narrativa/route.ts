@@ -16,7 +16,15 @@ export async function POST(req: NextRequest) {
     )
 
     const data = await response.json()
+    console.log('Gemini response status:', response.status)
+    console.log('Gemini response data:', JSON.stringify(data))
+
     const texto = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+    if (!texto) {
+      console.log('Gemini blocked or empty:', data.promptFeedback || data.candidates?.[0]?.finishReason)
+      return NextResponse.json({ error: 'Respuesta vacía de Gemini', details: data }, { status: 500 })
+    }
 
     return NextResponse.json({ texto })
   } catch (error) {
