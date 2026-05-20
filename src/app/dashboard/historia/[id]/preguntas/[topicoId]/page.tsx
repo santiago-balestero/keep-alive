@@ -161,7 +161,7 @@ export default function Preguntas() {
     if (imagenFile) {
       setSubiendoImagen(true)
       const ext = imagenFile.name.split('.').pop()
-      const path = `${user.id}/${historiaId}/${preguntaActual.id}.${ext}`
+      const path = `${historiaId}/${preguntaActual.id}_${Date.now()}.${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from('imagenes')
