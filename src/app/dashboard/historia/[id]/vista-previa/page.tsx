@@ -192,7 +192,10 @@ return data.texto || ''
 
   const cargarImagenBase64 = async (url: string): Promise<string | null> => {
     try {
-      const response = await fetch(url)
+      // Usar proxy para evitar problemas de CORS con Supabase Storage
+      const proxyUrl = `/api/imagen-proxy?url=${encodeURIComponent(url)}`
+      const response = await fetch(proxyUrl)
+      if (!response.ok) return null
       const blob = await response.blob()
       return new Promise((resolve) => {
         const reader = new FileReader()
