@@ -332,20 +332,46 @@ return data.texto || ''
 
         if (fotosCapitulo.length > 0) {
           const maxFotos = Math.min(fotosCapitulo.length, 4)
-          const cols = maxFotos <= 1 ? 1 : 2
+          const cols = maxFotos === 1 ? 1 : 2
           const rows = Math.ceil(maxFotos / cols)
-          const gap = 3
-          const fotoW = (anchoFotos - gap * (cols - 1)) / cols
-          const fotoH = (pageH - margen * 2 - gap * (rows - 1)) / rows
-          const yStart = margen
+          const gap = 4
+          const areaH = pageH - margen * 2
+          const areaW = anchoFotos
+          const celdaW = (areaW - gap * (cols - 1)) / cols
+          const celdaH = (areaH - gap * (rows - 1)) / rows
 
           for (let i = 0; i < maxFotos; i++) {
             const col = i % cols
             const row = Math.floor(i / cols)
-            const x = xFotos + col * (fotoW + gap)
-            const y = yStart + row * (fotoH + gap)
+            const celdaX = xFotos + col * (celdaW + gap)
+            const celdaY = margen + row * (celdaH + gap)
+
+            // Calcular dimensiones manteniendo aspect ratio
+            const img = new Image()
+            await new Promise<void>((resolve) => {
+              img.onload = () => resolve()
+              img.onerror = () => resolve()
+              img.src = fotosCapitulo[i]
+            })
+
+            const imgW = img.naturalWidth || 1
+            const imgH = img.naturalHeight || 1
+            const ratio = imgW / imgH
+
+            let drawW = celdaW
+            let drawH = celdaW / ratio
+
+            if (drawH > celdaH) {
+              drawH = celdaH
+              drawW = celdaH * ratio
+            }
+
+            // Centrar dentro de la celda
+            const offsetX = celdaX + (celdaW - drawW) / 2
+            const offsetY = celdaY + (celdaH - drawH) / 2
+
             try {
-              pdf.addImage(fotosCapitulo[i], 'JPEG', x, y, fotoW, fotoH)
+              pdf.addImage(fotosCapitulo[i], 'JPEG', offsetX, offsetY, drawW, drawH)
             } catch {}
           }
         }
