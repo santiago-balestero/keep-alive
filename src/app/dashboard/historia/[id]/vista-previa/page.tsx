@@ -299,42 +299,80 @@ return data.texto || ''
 
         // --- LAYOUT: fotos izquierda, texto derecha ---
         if (tieneFotos) {
-          const anchoFotos = mitad - margen
-          const anchoTexto = mitad - margen * 1.5
-          const xTexto = mitad + margen / 2
+          const anchoFotos = mitad
+          const anchoTexto = mitad - margen * 2
+          const xTexto = mitad + margen
+          const gap = 2
 
-          // Fotos en grilla izquierda (sin margen izquierdo, sangradas al borde)
-          const maxFotos = Math.min(fotosCapitulo.length, 6)
-          const cols = maxFotos === 1 ? 1 : 2
-          const rows = Math.ceil(maxFotos / cols)
-          const gap = 3
-          const fotoW = (anchoFotos - gap * (cols - 1)) / cols
-          const fotoH = (pageH - gap * (rows - 1)) / rows
+          // Layouts orgánicos según cantidad de fotos
+          const n = Math.min(fotosCapitulo.length, 6)
+          type Rect = { x: number; y: number; w: number; h: number }
+          let rects: Rect[] = []
 
-          for (let i = 0; i < maxFotos; i++) {
-            const col = i % cols
-            const row = Math.floor(i / cols)
-            const x = col * (fotoW + gap)
-            const y = row * (fotoH + gap)
+          if (n === 1) {
+            rects = [{ x: 0, y: 0, w: anchoFotos, h: pageH }]
+          } else if (n === 2) {
+            // Una grande arriba, una más chica abajo
+            const h1 = pageH * 0.62
+            const h2 = pageH - h1 - gap
+            rects = [
+              { x: 0, y: 0, w: anchoFotos, h: h1 },
+              { x: 0, y: h1 + gap, w: anchoFotos, h: h2 },
+            ]
+          } else if (n === 3) {
+            // Grande izquierda, dos apiladas derecha
+            const w1 = anchoFotos * 0.58
+            const w2 = anchoFotos - w1 - gap
+            const h2 = (pageH - gap) / 2
+            rects = [
+              { x: 0, y: 0, w: w1, h: pageH },
+              { x: w1 + gap, y: 0, w: w2, h: h2 },
+              { x: w1 + gap, y: h2 + gap, w: w2, h: pageH - h2 - gap },
+            ]
+          } else if (n === 4) {
+            // Grilla 2x2 con alturas desiguales
+            const w = (anchoFotos - gap) / 2
+            const h1 = pageH * 0.55
+            const h2 = pageH - h1 - gap
+            rects = [
+              { x: 0, y: 0, w: w, h: h1 },
+              { x: w + gap, y: 0, w: w, h: h2 },
+              { x: 0, y: h1 + gap, w: w, h: pageH - h1 - gap },
+              { x: w + gap, y: h2 + gap, w: w, h: pageH - h2 - gap },
+            ]
+          } else if (n === 5) {
+            // Grande arriba izquierda, dos arriba derecha, dos abajo
+            const w = (anchoFotos - gap) / 2
+            const h1 = pageH * 0.5
+            const h2 = pageH - h1 - gap
+            const w3 = anchoFotos / 3 - gap / 2
+            rects = [
+              { x: 0, y: 0, w: w, h: h1 },
+              { x: w + gap, y: 0, w: w, h: h1 * 0.6 },
+              { x: w + gap, y: h1 * 0.6 + gap, w: w, h: h1 - h1 * 0.6 - gap },
+              { x: 0, y: h1 + gap, w: w3, h: h2 },
+              { x: w3 + gap, y: h1 + gap, w: anchoFotos - w3 - gap, h: h2 },
+            ]
+          } else {
+            // 6 fotos: 3 filas x 2 columnas con alturas variables
+            const w = (anchoFotos - gap) / 2
+            const h1 = pageH * 0.38
+            const h2 = pageH * 0.34
+            const h3 = pageH - h1 - h2 - gap * 2
+            rects = [
+              { x: 0, y: 0, w: w, h: h1 },
+              { x: w + gap, y: 0, w: w, h: h2 },
+              { x: 0, y: h1 + gap, w: w, h: h2 },
+              { x: w + gap, y: h2 + gap, w: w, h: h1 },
+              { x: 0, y: h1 + h2 + gap * 2, w: w, h: h3 },
+              { x: w + gap, y: h1 + h2 + gap * 2, w: w, h: h3 },
+            ]
+          }
 
+          for (let i = 0; i < rects.length && i < fotosCapitulo.length; i++) {
+            const r = rects[i]
             try {
-              const dimensiones = await new Promise<{w: number, h: number}>((resolve) => {
-                if (typeof window === 'undefined') return resolve({w: 1, h: 1})
-                const imgEl = document.createElement('img')
-                imgEl.onload = () => resolve({ w: imgEl.naturalWidth, h: imgEl.naturalHeight })
-                imgEl.onerror = () => resolve({ w: 1, h: 1 })
-                imgEl.src = fotosCapitulo[i]
-              })
-
-              const ratio = dimensiones.w / dimensiones.h
-              let drawW = fotoW
-              let drawH = fotoW / ratio
-              if (drawH > fotoH) { drawH = fotoH; drawW = fotoH * ratio }
-
-              const offsetX = x + (fotoW - drawW) / 2
-              const offsetY = y + (fotoH - drawH) / 2
-
-              pdf.addImage(fotosCapitulo[i], 'JPEG', offsetX, offsetY, drawW, drawH)
+              pdf.addImage(fotosCapitulo[i], 'JPEG', r.x, r.y, r.w, r.h)
             } catch {}
           }
 
