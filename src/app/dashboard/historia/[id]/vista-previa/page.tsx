@@ -34,7 +34,7 @@ type Capitulo = {
   topico: Topico
   preguntas: Pregunta[]
   respuestas: Record<number, string>
-  imagenes: Record<number, string>
+  imagenes: Record<number, string[]>
   narrativa?: string
 }
 
@@ -69,14 +69,24 @@ export default function VistaPrevia() {
 
       const { data: respuestasData } = await supabase
         .from('respuestas')
-        .select('id_pregunta, contenido, imagen_url')
+        .select('id_pregunta, contenido')
         .eq('id_historia', historiaId)
 
       const mapaRespuestas: Record<number, string> = {}
-      const mapaImagenes: Record<number, string> = {}
-      respuestasData?.forEach((r: Respuesta) => {
+      respuestasData?.forEach((r: any) => {
         mapaRespuestas[r.id_pregunta] = r.contenido
-        if (r.imagen_url) mapaImagenes[r.id_pregunta] = r.imagen_url
+      })
+
+      const { data: imagenesData } = await supabase
+        .from('respuesta_imagenes')
+        .select('id_pregunta, imagen_url, orden')
+        .eq('id_historia', historiaId)
+        .order('orden')
+
+      const mapaImagenes: Record<number, string[]> = {}
+      imagenesData?.forEach((img: any) => {
+        if (!mapaImagenes[img.id_pregunta]) mapaImagenes[img.id_pregunta] = []
+        mapaImagenes[img.id_pregunta].push(img.imagen_url)
       })
 
       const caps: Capitulo[] = await Promise.all(
@@ -324,8 +334,9 @@ return data.texto || ''
         // --- FOTOS A LA DERECHA ---
         const fotosCapitulo: string[] = []
         for (const p of cap.preguntas) {
-          if (cap.imagenes[p.id]) {
-            const base64 = await cargarImagenBase64(cap.imagenes[p.id])
+          const urls = cap.imagenes[p.id] || []
+          for (const url of urls) {
+            const base64 = await cargarImagenBase64(url)
             if (base64) fotosCapitulo.push(base64)
           }
         }
@@ -567,30 +578,28 @@ return data.texto || ''
                             if (fotos[fotoIndex] && i < parrafos.length - 1 && (i + 1) % Math.max(1, Math.floor(parrafos.length / fotos.length)) === 0) {
                               const foto = fotos.shift()
                               if (foto) {
-                                resultado.push(
-                                  <div key={`img-${foto.id}`} className="rounded-2xl overflow-hidden">
-                                    <img
-                                      src={capActual.imagenes[foto.id]}
-                                      alt="Foto"
-                                      className="w-full object-cover max-h-80 rounded-2xl"
-                                    />
-                                  </div>
-                                )
+                                const urls = capActual.imagenes[foto.id] || []
+                                urls.forEach((url, urlIdx) => {
+                                  resultado.push(
+                                    <div key={`img-${foto.id}-${urlIdx}`} className="rounded-2xl overflow-hidden">
+                                      <img src={url} alt="Foto" className="w-full object-cover max-h-80 rounded-2xl" />
+                                    </div>
+                                  )
+                                })
                               }
                             }
                           })
 
                           // Fotos restantes al final
                           fotos.forEach((foto) => {
-                            resultado.push(
-                              <div key={`img-end-${foto.id}`} className="rounded-2xl overflow-hidden">
-                                <img
-                                  src={capActual.imagenes[foto.id]}
-                                  alt="Foto"
-                                  className="w-full object-cover max-h-80 rounded-2xl"
-                                />
-                              </div>
-                            )
+                            const urls = capActual.imagenes[foto.id] || []
+                            urls.forEach((url, urlIdx) => {
+                              resultado.push(
+                                <div key={`img-end-${foto.id}-${urlIdx}`} className="rounded-2xl overflow-hidden">
+                                  <img src={url} alt="Foto" className="w-full object-cover max-h-80 rounded-2xl" />
+                                </div>
+                              )
+                            })
                           })
 
                           return resultado
@@ -620,15 +629,16 @@ return data.texto || ''
                 </div>
 
                 {/* Fotos — solo en modo original */}
-                {!modoNarrativa && capActual.preguntas.some((p) => capActual.imagenes[p.id]) && (
+                {!modoNarrativa && capActual.preguntas.some((p) => capActual.imagenes[p.id]?.length > 0) && (
                   <div className="w-full sm:w-64 p-4 grid grid-cols-2 gap-2 content-start border-t sm:border-t-0 sm:border-l border-[#EEEEEE]">
                     {capActual.preguntas
-                      .filter((p) => capActual.imagenes[p.id])
-                      .map((p) => (
+                      .filter((p) => capActual.imagenes[p.id]?.length > 0)
+                      .flatMap((p) => capActual.imagenes[p.id])
+                      .map((url, i) => (
                         <img
-                          key={p.id}
-                          src={capActual.imagenes[p.id]}
-                          alt="Foto"
+                          key={i}
+                          src={url}
+                          alt={`Foto ${i + 1}`}
                           className="w-full aspect-square object-cover rounded-lg"
                         />
                       ))}
