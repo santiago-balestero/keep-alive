@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 
-type EstadoVista = 'cargando' | 'bienvenida' | 'eligiendo-topico' | 'respondiendo' | 'finalizado' | 'error'
+type EstadoVista = 'cargando' | 'pidiendo-nombre' | 'bienvenida' | 'eligiendo-topico' | 'respondiendo' | 'finalizado' | 'error'
 type Colaborador = { id: string; email: string; id_historia: string; estado: string }
 type Historia = { id: string; titulo: string; tipo: string; nombre_protagonista: string | null; descripcion: string | null }
 type Topico = { id: number; nombre_es: string }
@@ -31,6 +31,8 @@ export default function ColaborarPage() {
   const [soportaVoz, setSoportaVoz] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
+  const [nombreColaborador, setNombreColaborador] = useState('')
+  const [nombreInput, setNombreInput] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const recognitionRef = useRef<any>(null)
   const supabase = createClient()
@@ -54,12 +56,36 @@ export default function ColaborarPage() {
         await supabase.from('colaboradores').update({ estado: 'aceptado' }).eq('id', colab.id)
       }
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserId(user.id)
+      // Verificar si ya tiene nombre guardado en localStorage
+      const nombreGuardado = localStorage.getItem(`keepalive_nombre_${token}`)
+      const userIdGuardado = localStorage.getItem(`keepalive_userid_${token}`)
+
+      if (nombreGuardado && userIdGuardado) {
+        // Ya vino antes, restaurar su sesion
+        setNombreColaborador(nombreGuardado)
+        setUserId(userIdGuardado)
+
+        // Intentar recuperar la sesion anonima existente
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          const { data: anonData } = await supabase.auth.signInAnonymously()
+          if (anonData?.user) {
+            localStorage.setItem(`keepalive_userid_${token}`, anonData.user.id)
+            setUserId(anonData.user.id)
+          }
+        }
       } else {
-        const { data: anonData } = await supabase.auth.signInAnonymously()
-        if (anonData?.user) setUserId(anonData.user.id)
+        // Primera vez, crear sesion anonima
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setUserId(user.id)
+        } else {
+          const { data: anonData } = await supabase.auth.signInAnonymously()
+          if (anonData?.user) {
+            setUserId(anonData.user.id)
+            localStorage.setItem(`keepalive_userid_${token}`, anonData.user.id)
+          }
+        }
       }
 
       const { data: h } = await supabase.from('historias').select('*').eq('id', colab.id_historia).single()
@@ -69,7 +95,12 @@ export default function ColaborarPage() {
         .from('historia_topicos').select('topicos(id, nombre_es)').eq('id_historia', colab.id_historia)
       if (ht) setTopicos(ht.map((row: any) => row.topicos).filter(Boolean))
 
-      setEstado('bienvenida')
+      // Si ya tiene nombre, ir directo a bienvenida, sino pedir nombre
+      if (nombreGuardado) {
+        setEstado('bienvenida')
+      } else {
+        setEstado('pidiendo-nombre')
+      }
     }
     init()
   }, [token])
@@ -246,13 +277,58 @@ export default function ColaborarPage() {
     </main>
   )
 
+  if (estado === 'pidiendo-nombre') return (
+    <main className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-6">
+      <div className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
+        <Image src="/logo.jpg" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
+        <div className="flex flex-col gap-2">
+          <h1 className="text-xl font-semibold text-[#141414]">Hola, ¿cómo te llamás?</h1>
+          <p className="text-sm text-[#888888]">
+            Tu nombre va a aparecer junto a tus respuestas en la historia.
+          </p>
+        </div>
+        <div className="w-full flex flex-col gap-3">
+          <input
+            type="text"
+            placeholder="Tu nombre"
+            value={nombreInput}
+            onChange={(e) => setNombreInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && nombreInput.trim()) {
+                localStorage.setItem(`keepalive_nombre_${token}`, nombreInput.trim())
+                setNombreColaborador(nombreInput.trim())
+                setEstado('bienvenida')
+              }
+            }}
+            className="w-full h-12 px-4 text-sm border border-[#EEEEEE] rounded-xl bg-[#F8F8F8] text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] focus:bg-white text-center text-base"
+            autoFocus
+          />
+          <button
+            onClick={() => {
+              if (!nombreInput.trim()) return
+              localStorage.setItem(`keepalive_nombre_${token}`, nombreInput.trim())
+              setNombreColaborador(nombreInput.trim())
+              setEstado('bienvenida')
+            }}
+            disabled={!nombreInput.trim()}
+            className="w-full h-12 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#2A2A2A] active:scale-[0.98] transition-all disabled:opacity-40"
+          >
+            Continuar →
+          </button>
+        </div>
+      </div>
+    </main>
+  )
+
   if (estado === 'bienvenida') return (
     <main className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-6">
       <div className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
         <Image src="/logo.jpg" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
         <div className="flex flex-col gap-2">
-          <h1 className="text-xl font-semibold text-[#141414]">Te invitaron a colaborar</h1>
-          <p className="text-sm text-[#888888]">Fuiste invitado a contribuir con recuerdos para la historia:</p>
+          <h1 className="text-xl font-semibold text-[#141414]">
+            Hola, {nombreColaborador}! 👋
+          </h1>
+          <p className="text-sm text-[#888888]">Te invitaron a contribuir con recuerdos para la historia:</p>
           <p className="text-base font-medium text-[#141414] mt-1">"{historia?.titulo}"</p>
           {historia?.descripcion && <p className="text-xs text-[#AAAAAA]">{historia.descripcion}</p>}
         </div>
