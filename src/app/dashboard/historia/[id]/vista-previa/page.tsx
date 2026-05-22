@@ -226,74 +226,61 @@ return data.texto || ''
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
       const pageW = 297
       const pageH = 210
-      const margen = 18
-      const anchoTexto = 130
-      const anchoFotos = pageW - anchoTexto - margen * 3
-      const xFotos = margen + anchoTexto + margen
+      const margen = 16
+      const mitad = pageW / 2
 
       // --- PORTADA ---
       pdf.setFillColor(20, 20, 20)
       pdf.rect(0, 0, pageW, pageH, 'F')
 
-      // Logo si existe
       try {
         const logoBase64 = await cargarImagenBase64(`${window.location.origin}/logo.jpg`)
-        if (logoBase64) {
-          pdf.addImage(logoBase64, 'JPEG', pageW / 2 - 20, 30, 40, 40)
-        }
+        if (logoBase64) pdf.addImage(logoBase64, 'JPEG', mitad - 18, 28, 36, 36)
       } catch {}
 
       pdf.setTextColor(255, 255, 255)
-      pdf.setFontSize(32)
+      pdf.setFontSize(30)
       pdf.setFont('helvetica', 'bold')
       const tituloLines = pdf.splitTextToSize(historia?.titulo || '', pageW - 60)
-      pdf.text(tituloLines, pageW / 2, 95, { align: 'center' })
+      pdf.text(tituloLines, mitad, 90, { align: 'center' })
 
       if (historia?.descripcion) {
-        pdf.setFontSize(13)
+        pdf.setFontSize(12)
         pdf.setFont('helvetica', 'normal')
-        pdf.setTextColor(180, 180, 180)
-        const descLines = pdf.splitTextToSize(historia.descripcion, pageW - 80)
-        pdf.text(descLines, pageW / 2, 115, { align: 'center' })
+        pdf.setTextColor(160, 160, 160)
+        pdf.text(historia.descripcion, mitad, 108, { align: 'center' })
       }
 
       if (historia?.nombre_protagonista) {
         pdf.setFontSize(11)
         pdf.setFont('helvetica', 'italic')
-        pdf.setTextColor(140, 140, 140)
-        pdf.text(historia.nombre_protagonista, pageW / 2, pageH - 28, { align: 'center' })
+        pdf.setTextColor(120, 120, 120)
+        pdf.text(historia.nombre_protagonista, mitad, pageH - 24, { align: 'center' })
       }
 
-      pdf.setFontSize(10)
+      pdf.setFontSize(9)
       pdf.setFont('helvetica', 'normal')
-      pdf.setTextColor(100, 100, 100)
+      pdf.setTextColor(80, 80, 80)
       pdf.text(
         new Date().toLocaleDateString('es-UY', { day: 'numeric', month: 'long', year: 'numeric' }),
-        pageW / 2, pageH - 18, { align: 'center' }
+        mitad, pageH - 14, { align: 'center' }
       )
 
       // --- CAPÍTULOS ---
-      for (const cap of capitulos) {
-        pdf.addPage()
-        pdf.setFillColor(255, 255, 255)
-        pdf.rect(0, 0, pageW, pageH, 'F')
+      for (let capIdx = 0; capIdx < capitulos.length; capIdx++) {
+        const cap = capitulos[capIdx]
 
-        // Línea decorativa superior
-        pdf.setDrawColor(107, 143, 194)
-        pdf.setLineWidth(0.4)
-        pdf.line(margen, 14, pageW - margen, 14)
+        // Recopilar todas las fotos del capítulo
+        const fotosCapitulo: string[] = []
+        for (const p of cap.preguntas) {
+          const urls = cap.imagenes[p.id] || []
+          for (const url of urls) {
+            const base64 = await cargarImagenBase64(url)
+            if (base64) fotosCapitulo.push(base64)
+          }
+        }
 
-        // Título del capítulo
-        pdf.setFontSize(9)
-        pdf.setFont('helvetica', 'normal')
-        pdf.setTextColor(107, 143, 194)
-        pdf.text(cap.topico.nombre_es.toUpperCase(), margen, 11)
-
-        // Número de página (derecha)
-        pdf.setTextColor(180, 180, 180)
-        pdf.text(String(capitulos.indexOf(cap) + 1), pageW - margen, 11, { align: 'right' })
-
-        // --- TEXTO NARRATIVO o respuestas ---
+        // Texto a usar
         let textoCompleto = ''
         if (modoNarrativa && cap.narrativa) {
           textoCompleto = cap.narrativa
@@ -304,61 +291,33 @@ return data.texto || ''
             .join('\n\n')
         }
 
-        pdf.setFontSize(10.5)
-        pdf.setFont('helvetica', 'normal')
-        pdf.setTextColor(30, 30, 30)
+        const tieneFotos = fotosCapitulo.length > 0
 
-        const parrafos = textoCompleto.split('\n\n').filter(Boolean)
-        let y = 24
-        const lineHeight = 5.8
-        const maxY = pageH - margen - 14 // deja espacio para el nombre
+        pdf.addPage()
+        pdf.setFillColor(255, 255, 255)
+        pdf.rect(0, 0, pageW, pageH, 'F')
 
-        for (const parrafo of parrafos) {
-          const lines = pdf.splitTextToSize(parrafo, anchoTexto)
-          const alturaParrafo = lines.length * lineHeight
-          if (y + alturaParrafo > maxY) break
-          pdf.text(lines, margen, y)
-          y += alturaParrafo + 4
-        }
+        // --- LAYOUT: fotos izquierda, texto derecha ---
+        if (tieneFotos) {
+          const anchoFotos = mitad - margen
+          const anchoTexto = mitad - margen * 1.5
+          const xTexto = mitad + margen / 2
 
-        // Nombre del autor/colaborador al final del texto
-        const nombreAutor = historia?.nombre_protagonista ||
-          (historia?.tipo === 'autobiografia' ? historia?.titulo?.split(' ')[0] : '')
-        if (nombreAutor) {
-          pdf.setFontSize(10)
-          pdf.setFont('helvetica', 'italic')
-          pdf.setTextColor(80, 80, 80)
-          pdf.text(nombreAutor, margen, pageH - margen)
-        }
-
-        // --- FOTOS A LA DERECHA ---
-        const fotosCapitulo: string[] = []
-        for (const p of cap.preguntas) {
-          const urls = cap.imagenes[p.id] || []
-          for (const url of urls) {
-            const base64 = await cargarImagenBase64(url)
-            if (base64) fotosCapitulo.push(base64)
-          }
-        }
-
-        if (fotosCapitulo.length > 0) {
-          const maxFotos = Math.min(fotosCapitulo.length, 4)
+          // Fotos en grilla izquierda (sin margen izquierdo, sangradas al borde)
+          const maxFotos = Math.min(fotosCapitulo.length, 6)
           const cols = maxFotos === 1 ? 1 : 2
           const rows = Math.ceil(maxFotos / cols)
-          const gap = 4
-          const areaH = pageH - margen * 2
-          const areaW = anchoFotos
-          const celdaW = (areaW - gap * (cols - 1)) / cols
-          const celdaH = (areaH - gap * (rows - 1)) / rows
+          const gap = 3
+          const fotoW = (anchoFotos - gap * (cols - 1)) / cols
+          const fotoH = (pageH - gap * (rows - 1)) / rows
 
           for (let i = 0; i < maxFotos; i++) {
             const col = i % cols
             const row = Math.floor(i / cols)
-            const celdaX = xFotos + col * (celdaW + gap)
-            const celdaY = margen + row * (celdaH + gap)
+            const x = col * (fotoW + gap)
+            const y = row * (fotoH + gap)
 
             try {
-              // Obtener dimensiones reales de la imagen desde el base64
               const dimensiones = await new Promise<{w: number, h: number}>((resolve) => {
                 if (typeof window === 'undefined') return resolve({w: 1, h: 1})
                 const imgEl = document.createElement('img')
@@ -368,21 +327,82 @@ return data.texto || ''
               })
 
               const ratio = dimensiones.w / dimensiones.h
-              let drawW = celdaW
-              let drawH = celdaW / ratio
+              let drawW = fotoW
+              let drawH = fotoW / ratio
+              if (drawH > fotoH) { drawH = fotoH; drawW = fotoH * ratio }
 
-              if (drawH > celdaH) {
-                drawH = celdaH
-                drawW = celdaH * ratio
-              }
-
-              const offsetX = celdaX + (celdaW - drawW) / 2
-              const offsetY = celdaY + (celdaH - drawH) / 2
+              const offsetX = x + (fotoW - drawW) / 2
+              const offsetY = y + (fotoH - drawH) / 2
 
               pdf.addImage(fotosCapitulo[i], 'JPEG', offsetX, offsetY, drawW, drawH)
             } catch {}
           }
+
+          // Texto lado derecho
+          const parrafos = textoCompleto.split('\n\n').filter(Boolean)
+          const lineHeight = 5.2
+          const fontSize = 10
+          pdf.setFontSize(fontSize)
+          pdf.setFont('helvetica', 'normal')
+          pdf.setTextColor(25, 25, 25)
+
+          let y = margen + 4
+          const maxY = pageH - margen - 16
+
+          for (const parrafo of parrafos) {
+            const lines = pdf.splitTextToSize(parrafo, anchoTexto)
+            const h = lines.length * lineHeight
+            if (y + h > maxY) break
+            pdf.text(lines, xTexto, y)
+            y += h + 5
+          }
+
+          // Nombre abajo a la derecha
+          const nombreAutor = historia?.nombre_protagonista ||
+            (historia?.tipo === 'autobiografia' ? historia?.titulo?.split(' ')[0] : '')
+          if (nombreAutor) {
+            pdf.setFontSize(10)
+            pdf.setFont('helvetica', 'italic')
+            pdf.setTextColor(100, 100, 100)
+            pdf.text(nombreAutor, pageW - margen, pageH - margen, { align: 'right' })
+          }
+
+        } else {
+          // Sin fotos: texto centrado en toda la página
+          const anchoTexto = pageW - margen * 4
+          const xTexto = margen * 2
+          const parrafos = textoCompleto.split('\n\n').filter(Boolean)
+          const lineHeight = 6
+          pdf.setFontSize(11)
+          pdf.setFont('helvetica', 'normal')
+          pdf.setTextColor(25, 25, 25)
+
+          let y = margen + 8
+          const maxY = pageH - margen - 16
+
+          for (const parrafo of parrafos) {
+            const lines = pdf.splitTextToSize(parrafo, anchoTexto)
+            const h = lines.length * lineHeight
+            if (y + h > maxY) break
+            pdf.text(lines, xTexto, y)
+            y += h + 6
+          }
+
+          const nombreAutor = historia?.nombre_protagonista ||
+            (historia?.tipo === 'autobiografia' ? historia?.titulo?.split(' ')[0] : '')
+          if (nombreAutor) {
+            pdf.setFontSize(10)
+            pdf.setFont('helvetica', 'italic')
+            pdf.setTextColor(100, 100, 100)
+            pdf.text(nombreAutor, pageW - margen * 2, pageH - margen, { align: 'right' })
+          }
         }
+
+        // Número de página centrado abajo
+        pdf.setFontSize(8)
+        pdf.setFont('helvetica', 'normal')
+        pdf.setTextColor(180, 180, 180)
+        pdf.text(String(capIdx + 1), mitad, pageH - 5, { align: 'center' })
       }
 
       pdf.save(`${historia?.titulo || 'historia'}.pdf`)
