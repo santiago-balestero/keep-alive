@@ -6,10 +6,11 @@ import { useRouter, useParams } from 'next/navigation'
 import Header from '@/components/Header'
 
 type Pregunta = {
-  id: number
+  id: number | string
   texto_es: string
   texto_es_tercera: string
   orden: number
+  personalizada?: boolean
 }
 
 type Historia = {
@@ -30,6 +31,9 @@ export default function Preguntas() {
   const [subiendoImagen, setSubiendoImagen] = useState(false)
   const [escuchando, setEscuchando] = useState(false)
   const [soportaVoz, setSoportaVoz] = useState(true)
+  const [mostrarAgregarPregunta, setMostrarAgregarPregunta] = useState(false)
+  const [nuevaPregunta, setNuevaPregunta] = useState('')
+  const [guardandoPregunta, setGuardandoPregunta] = useState(false)
   const recognitionRef = useRef<any>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
@@ -47,7 +51,24 @@ export default function Preguntas() {
       if (t) setTopicoNombre(t.nombre_es)
 
       const { data: p } = await supabase.from('preguntas').select('*').eq('id_topico', topicoId).order('orden')
-      if (p) setPreguntas(p)
+
+      // Cargar preguntas personalizadas de esta historia y tópico
+      const { data: pp } = await supabase
+        .from('preguntas_personalizadas')
+        .select('*')
+        .eq('id_historia', historiaId)
+        .eq('id_topico', topicoId)
+        .order('orden')
+
+      const personalizadas = (pp || []).map((p: any) => ({
+        id: p.id,
+        texto_es: p.texto,
+        texto_es_tercera: p.texto,
+        orden: p.orden,
+        personalizada: true,
+      }))
+
+      if (p) setPreguntas([...p, ...personalizadas])
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -212,6 +233,42 @@ export default function Preguntas() {
     }
   }
 
+  const handleAgregarPregunta = async () => {
+    if (!nuevaPregunta.trim()) return
+    setGuardandoPregunta(true)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from('preguntas_personalizadas')
+      .insert({
+        id_historia: historiaId,
+        id_topico: topicoId,
+        texto: nuevaPregunta.trim(),
+        id_autor: user.id,
+        orden: preguntas.length,
+      })
+      .select()
+      .single()
+
+    if (!error && data) {
+      const nuevaP: Pregunta = {
+        id: data.id,
+        texto_es: data.texto,
+        texto_es_tercera: data.texto,
+        orden: data.orden,
+        personalizada: true,
+      }
+      setPreguntas((prev) => [...prev, nuevaP])
+      setNuevaPregunta('')
+      setMostrarAgregarPregunta(false)
+      // Ir directo a responder la nueva pregunta
+      setIndice(preguntas.length)
+    }
+    setGuardandoPregunta(false)
+  }
+
   const handleSaltar = () => {
     if (indice < preguntas.length - 1) setIndice((prev) => prev + 1)
     else router.push(`/dashboard/historia/${historiaId}`)
@@ -254,7 +311,10 @@ export default function Preguntas() {
         </div>
 
         {/* Pregunta */}
-        <div className="bg-white border-2 border-[#141414] rounded-2xl p-5">
+        <div className={`rounded-2xl p-5 border-2 ${preguntaActual?.personalizada ? 'border-[#6B8FC2] bg-[#EEF3FA]' : 'bg-white border-[#141414]'}`}>
+          {preguntaActual?.personalizada && (
+            <p className="text-xs text-[#6B8FC2] font-medium mb-2">Pregunta personalizada</p>
+          )}
           <p className="text-sm text-[#141414] leading-relaxed">{textoPregunta}</p>
         </div>
 
@@ -358,6 +418,43 @@ export default function Preguntas() {
             {subiendoImagen ? 'Subiendo fotos...' : loading ? 'Guardando...' : indice < preguntas.length - 1 ? 'Guardar y seguir →' : 'Finalizar →'}
           </button>
         </div>
+
+        {/* Agregar pregunta personalizada */}
+        {!mostrarAgregarPregunta ? (
+          <button
+            onClick={() => setMostrarAgregarPregunta(true)}
+            className="text-xs text-[#6B8FC2] hover:underline text-center"
+          >
+            + Agregar mi propia pregunta
+          </button>
+        ) : (
+          <div className="bg-white border border-[#EEEEEE] rounded-2xl p-4 flex flex-col gap-3">
+            <p className="text-xs font-medium text-[#888888] uppercase tracking-widest">Nueva pregunta</p>
+            <textarea
+              value={nuevaPregunta}
+              onChange={(e) => setNuevaPregunta(e.target.value)}
+              placeholder="Ej: ¿Cómo era la relación con tu hermano mayor?"
+              rows={3}
+              className="w-full px-4 py-3 text-sm border-2 border-[#EEEEEE] rounded-xl bg-[#F8F8F8] text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] resize-none"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setMostrarAgregarPregunta(false); setNuevaPregunta('') }}
+                className="flex-1 h-10 border-2 border-[#EEEEEE] rounded-xl text-sm text-[#888888] bg-white hover:bg-[#F8F8F8]"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAgregarPregunta}
+                disabled={!nuevaPregunta.trim() || guardandoPregunta}
+                className="flex-[2] h-10 bg-[#6B8FC2] text-white text-sm font-medium rounded-xl hover:bg-[#5A7EB1] disabled:opacity-40"
+              >
+                {guardandoPregunta ? 'Guardando...' : 'Agregar y responder →'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   )
