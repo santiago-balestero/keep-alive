@@ -372,7 +372,6 @@ return data.texto || ''
           for (let i = 0; i < rects.length && i < fotosCapitulo.length; i++) {
             const r = rects[i]
             try {
-              // Calcular dimensiones reales para hacer cover sin deformar
               const dimensiones = await new Promise<{w: number, h: number}>((resolve) => {
                 if (typeof window === 'undefined') return resolve({w: 1, h: 1})
                 const imgEl = document.createElement('img')
@@ -382,33 +381,21 @@ return data.texto || ''
               })
 
               const ratio = dimensiones.w / dimensiones.h
-              const celdaRatio = r.w / r.h
+              let drawW = r.w
+              let drawH = r.w / ratio
 
-              let drawW: number, drawH: number, offsetX: number, offsetY: number
-
-              if (ratio > celdaRatio) {
-                // Imagen más ancha que la celda → ajustar por altura
+              // Si la altura calculada supera la celda, ajustar por altura
+              if (drawH > r.h) {
                 drawH = r.h
                 drawW = r.h * ratio
-                offsetX = r.x - (drawW - r.w) / 2
-                offsetY = r.y
-              } else {
-                // Imagen más alta que la celda → ajustar por ancho
-                drawW = r.w
-                drawH = r.w / ratio
-                offsetX = r.x
-                offsetY = r.y - (drawH - r.h) / 2
               }
 
-              // Clip para no salirse de la celda
-              ;(pdf as any).saveGraphicsState()
-              ;(pdf as any).rect(r.x, r.y, r.w, r.h).clip().discardPath()
+              // Centrar dentro de la celda sin recortar
+              const offsetX = r.x + (r.w - drawW) / 2
+              const offsetY = r.y + (r.h - drawH) / 2
+
               pdf.addImage(fotosCapitulo[i], 'JPEG', offsetX, offsetY, drawW, drawH)
-              ;(pdf as any).restoreGraphicsState()
-            } catch {
-              // Fallback sin clip
-              try { pdf.addImage(fotosCapitulo[i], 'JPEG', r.x, r.y, r.w, r.h) } catch {}
-            }
+            } catch {}
           }
 
           // Texto lado derecho
