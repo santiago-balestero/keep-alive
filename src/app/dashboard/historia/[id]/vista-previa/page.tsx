@@ -372,8 +372,43 @@ return data.texto || ''
           for (let i = 0; i < rects.length && i < fotosCapitulo.length; i++) {
             const r = rects[i]
             try {
-              pdf.addImage(fotosCapitulo[i], 'JPEG', r.x, r.y, r.w, r.h)
-            } catch {}
+              // Calcular dimensiones reales para hacer cover sin deformar
+              const dimensiones = await new Promise<{w: number, h: number}>((resolve) => {
+                if (typeof window === 'undefined') return resolve({w: 1, h: 1})
+                const imgEl = document.createElement('img')
+                imgEl.onload = () => resolve({ w: imgEl.naturalWidth, h: imgEl.naturalHeight })
+                imgEl.onerror = () => resolve({ w: 1, h: 1 })
+                imgEl.src = fotosCapitulo[i]
+              })
+
+              const ratio = dimensiones.w / dimensiones.h
+              const celdaRatio = r.w / r.h
+
+              let drawW: number, drawH: number, offsetX: number, offsetY: number
+
+              if (ratio > celdaRatio) {
+                // Imagen más ancha que la celda → ajustar por altura
+                drawH = r.h
+                drawW = r.h * ratio
+                offsetX = r.x - (drawW - r.w) / 2
+                offsetY = r.y
+              } else {
+                // Imagen más alta que la celda → ajustar por ancho
+                drawW = r.w
+                drawH = r.w / ratio
+                offsetX = r.x
+                offsetY = r.y - (drawH - r.h) / 2
+              }
+
+              // Clip para no salirse de la celda
+              ;(pdf as any).saveGraphicsState()
+              ;(pdf as any).rect(r.x, r.y, r.w, r.h).clip().discardPath()
+              pdf.addImage(fotosCapitulo[i], 'JPEG', offsetX, offsetY, drawW, drawH)
+              ;(pdf as any).restoreGraphicsState()
+            } catch {
+              // Fallback sin clip
+              try { pdf.addImage(fotosCapitulo[i], 'JPEG', r.x, r.y, r.w, r.h) } catch {}
+            }
           }
 
           // Texto lado derecho
