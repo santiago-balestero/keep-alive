@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Header from '@/components/Header'
-import Image from 'next/image'
 
 type Pregunta = {
   id: number
@@ -24,9 +23,8 @@ export default function Preguntas() {
   const [indice, setIndice] = useState(0)
   const [respuesta, setRespuesta] = useState('')
   const [respuestasGuardadas, setRespuestasGuardadas] = useState<Record<number, string>>({})
-  const [imagenesGuardadas, setImagenesGuardadas] = useState<Record<number, string>>({})
-  const [imagenPreview, setImagenPreview] = useState<string | null>(null)
-  const [imagenFile, setImagenFile] = useState<File | null>(null)
+  const [imagenesGuardadas, setImagenesGuardadas] = useState<Record<number, string[]>>({})
+  const [imagenesPreview, setImagenesPreview] = useState<{ url: string; file?: File }[]>([])
   const [loading, setLoading] = useState(false)
   const [guardado, setGuardado] = useState(false)
   const [subiendoImagen, setSubiendoImagen] = useState(false)
@@ -42,33 +40,40 @@ export default function Preguntas() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: h } = await supabase
-        .from('historias').select('tipo').eq('id', historiaId).single()
+      const { data: h } = await supabase.from('historias').select('tipo').eq('id', historiaId).single()
       if (h) setHistoria(h)
 
-      const { data: t } = await supabase
-        .from('topicos').select('nombre_es').eq('id', topicoId).single()
+      const { data: t } = await supabase.from('topicos').select('nombre_es').eq('id', topicoId).single()
       if (t) setTopicoNombre(t.nombre_es)
 
-      const { data: p } = await supabase
-        .from('preguntas').select('*').eq('id_topico', topicoId).order('orden')
+      const { data: p } = await supabase.from('preguntas').select('*').eq('id_topico', topicoId).order('orden')
       if (p) setPreguntas(p)
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: r } = await supabase
           .from('respuestas')
-          .select('id_pregunta, contenido, imagen_url')
+          .select('id_pregunta, contenido')
           .eq('id_historia', historiaId)
           .eq('id_usuario', user.id)
         if (r) {
           const mapaTexto: Record<number, string> = {}
-          const mapaImagenes: Record<number, string> = {}
-          r.forEach((resp) => {
-            mapaTexto[resp.id_pregunta] = resp.contenido
-            if (resp.imagen_url) mapaImagenes[resp.id_pregunta] = resp.imagen_url
-          })
+          r.forEach((resp) => { mapaTexto[resp.id_pregunta] = resp.contenido })
           setRespuestasGuardadas(mapaTexto)
+        }
+
+        const { data: imgs } = await supabase
+          .from('respuesta_imagenes')
+          .select('id_pregunta, imagen_url, orden')
+          .eq('id_historia', historiaId)
+          .eq('id_usuario', user.id)
+          .order('orden')
+        if (imgs) {
+          const mapaImagenes: Record<number, string[]> = {}
+          imgs.forEach((img) => {
+            if (!mapaImagenes[img.id_pregunta]) mapaImagenes[img.id_pregunta] = []
+            mapaImagenes[img.id_pregunta].push(img.imagen_url)
+          })
           setImagenesGuardadas(mapaImagenes)
         }
       }
@@ -79,50 +84,34 @@ export default function Preguntas() {
   useEffect(() => {
     if (preguntas[indice]) {
       setRespuesta(respuestasGuardadas[preguntas[indice].id] || '')
-      setImagenPreview(imagenesGuardadas[preguntas[indice].id] || null)
-      setImagenFile(null)
+      const imgs = imagenesGuardadas[preguntas[indice].id] || []
+      setImagenesPreview(imgs.map((url) => ({ url })))
       setGuardado(false)
     }
   }, [indice, preguntas, respuestasGuardadas, imagenesGuardadas])
 
-  const preguntaActual = preguntas[indice]
-  const textoPregunta = historia?.tipo === 'autobiografia'
-    ? preguntaActual?.texto_es
-    : preguntaActual?.texto_es_tercera
-
   const iniciarEscucha = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      setSoportaVoz(false)
-      return
-    }
-
+    if (!SpeechRecognition) { setSoportaVoz(false); return }
     const recognition = new SpeechRecognition()
     recognition.lang = 'es-AR'
     recognition.continuous = true
     recognition.interimResults = true
-
     let textoBase = respuesta
-
     recognition.onresult = (event: any) => {
       let textoFinal = ''
       let textoInterim = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript
-        if (event.results[i].isFinal) {
-          textoFinal += transcript + ' '
-        } else {
-          textoInterim += transcript
-        }
+        if (event.results[i].isFinal) textoFinal += transcript + ' '
+        else textoInterim += transcript
       }
       setRespuesta(textoBase + textoFinal + textoInterim)
       if (textoFinal) textoBase = textoBase + textoFinal
       setGuardado(false)
     }
-
     recognition.onerror = () => setEscuchando(false)
     recognition.onend = () => setEscuchando(false)
-
     recognition.start()
     recognitionRef.current = recognition
     setEscuchando(true)
@@ -133,79 +122,86 @@ export default function Preguntas() {
     setEscuchando(false)
   }
 
-  const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setImagenFile(file)
-    setImagenPreview(URL.createObjectURL(file))
-    setGuardado(false)
-  }
-
-  const handleEliminarImagen = () => {
-    setImagenFile(null)
-    setImagenPreview(null)
+  const handleImagenesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    const nuevas = files.map((file) => ({ url: URL.createObjectURL(file), file }))
+    setImagenesPreview((prev) => [...prev, ...nuevas])
     setGuardado(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  const handleEliminarImagen = (index: number) => {
+    setImagenesPreview((prev) => prev.filter((_, i) => i !== index))
+    setGuardado(false)
+  }
+
   const handleGuardar = async () => {
+    const preguntaActual = preguntas[indice]
     if (!preguntaActual) return
     setLoading(true)
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    let imagenUrl = imagenesGuardadas[preguntaActual.id] || null
-
-    // Subir imagen si hay una nueva
-    if (imagenFile) {
-      setSubiendoImagen(true)
-      const ext = imagenFile.name.split('.').pop()
-      const path = `${historiaId}/${preguntaActual.id}_${Date.now()}.${ext}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('images')
-        .upload(path, imagenFile, { upsert: true })
-
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage
-          .from('images')
-          .getPublicUrl(path)
-        imagenUrl = urlData.publicUrl
-      }
-      setSubiendoImagen(false)
-    }
-
-    // Si se eliminó la imagen
-    if (!imagenPreview && !imagenFile) {
-      imagenUrl = null
-    }
-
     const existe = respuestasGuardadas[preguntaActual.id] !== undefined
-
     if (existe) {
-      await supabase
-        .from('respuestas')
-        .update({ contenido: respuesta, imagen_url: imagenUrl })
+      await supabase.from('respuestas')
+        .update({ contenido: respuesta })
         .eq('id_historia', historiaId)
         .eq('id_pregunta', preguntaActual.id)
         .eq('id_usuario', user.id)
     } else {
-      await supabase
-        .from('respuestas')
-        .insert({
-          id_historia: historiaId,
-          id_pregunta: preguntaActual.id,
-          id_usuario: user.id,
-          contenido: respuesta,
-          imagen_url: imagenUrl,
-        })
+      await supabase.from('respuestas').insert({
+        id_historia: historiaId,
+        id_pregunta: preguntaActual.id,
+        id_usuario: user.id,
+        contenido: respuesta,
+      })
+    }
+
+    const fotosNuevas = imagenesPreview.filter((img) => img.file)
+    if (fotosNuevas.length > 0 || imagenesPreview.length === 0) {
+      setSubiendoImagen(true)
+
+      await supabase.from('respuesta_imagenes')
+        .delete()
+        .eq('id_historia', historiaId)
+        .eq('id_pregunta', preguntaActual.id)
+        .eq('id_usuario', user.id)
+
+      const urlsSubidas: string[] = []
+      for (let i = 0; i < imagenesPreview.length; i++) {
+        const img = imagenesPreview[i]
+        if (img.file) {
+          const ext = img.file.name.split('.').pop()
+          const path = `${historiaId}/${preguntaActual.id}_${i}_${Date.now()}.${ext}`
+          const { error } = await supabase.storage.from('images').upload(path, img.file, { upsert: true })
+          if (!error) {
+            const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
+            urlsSubidas.push(urlData.publicUrl)
+          }
+        } else {
+          urlsSubidas.push(img.url)
+        }
+      }
+
+      if (urlsSubidas.length > 0) {
+        await supabase.from('respuesta_imagenes').insert(
+          urlsSubidas.map((url, orden) => ({
+            id_historia: historiaId,
+            id_pregunta: preguntaActual.id,
+            id_usuario: user.id,
+            imagen_url: url,
+            orden,
+          }))
+        )
+      }
+
+      setImagenesGuardadas((prev) => ({ ...prev, [preguntaActual.id]: urlsSubidas }))
+      setSubiendoImagen(false)
     }
 
     setRespuestasGuardadas((prev) => ({ ...prev, [preguntaActual.id]: respuesta }))
-    if (imagenUrl) {
-      setImagenesGuardadas((prev) => ({ ...prev, [preguntaActual.id]: imagenUrl! }))
-    }
     setGuardado(true)
     setLoading(false)
 
@@ -217,12 +213,14 @@ export default function Preguntas() {
   }
 
   const handleSaltar = () => {
-    if (indice < preguntas.length - 1) {
-      setIndice((prev) => prev + 1)
-    } else {
-      router.push(`/dashboard/historia/${historiaId}`)
-    }
+    if (indice < preguntas.length - 1) setIndice((prev) => prev + 1)
+    else router.push(`/dashboard/historia/${historiaId}`)
   }
+
+  const preguntaActual = preguntas[indice]
+  const textoPregunta = historia?.tipo === 'autobiografia'
+    ? preguntaActual?.texto_es
+    : preguntaActual?.texto_es_tercera
 
   if (preguntas.length === 0) return (
     <main className="min-h-screen bg-[#F5F5F5] flex items-center justify-center">
@@ -243,10 +241,8 @@ export default function Preguntas() {
             <span>{indice + 1} / {preguntas.length}</span>
           </div>
           <div className="h-1.5 bg-[#EEEEEE] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#6B8FC2] rounded-full transition-all duration-500"
-              style={{ width: `${((indice + 1) / preguntas.length) * 100}%` }}
-            />
+            <div className="h-full bg-[#6B8FC2] rounded-full transition-all duration-500"
+              style={{ width: `${((indice + 1) / preguntas.length) * 100}%` }} />
           </div>
         </div>
 
@@ -276,11 +272,8 @@ export default function Preguntas() {
               type="button"
               onClick={escuchando ? detenerEscucha : iniciarEscucha}
               className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-                escuchando
-                  ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                  : 'bg-[#F0F0F0] hover:bg-[#E0E0E0]'
+                escuchando ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-[#F0F0F0] hover:bg-[#E0E0E0]'
               }`}
-              title={escuchando ? 'Detener grabación' : 'Grabar respuesta por voz'}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={escuchando ? 'white' : '#888888'} strokeWidth="2">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -294,9 +287,7 @@ export default function Preguntas() {
               Escuchando... hablá ahora
             </p>
           )}
-          {!soportaVoz && (
-            <p className="text-xs text-[#AAAAAA]">Tu navegador no soporta reconocimiento de voz.</p>
-          )}
+          {!soportaVoz && <p className="text-xs text-[#AAAAAA]">Tu navegador no soporta reconocimiento de voz.</p>}
           {guardado && (
             <p className="text-xs text-[#6B8FC2] flex items-center gap-1">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -307,27 +298,39 @@ export default function Preguntas() {
           )}
         </div>
 
-        {/* Imagen */}
+        {/* Fotos múltiples */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-medium text-[#888888] uppercase tracking-widest">
-            Foto (opcional)
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-[#888888] uppercase tracking-widest">Fotos (opcional)</p>
+            {imagenesPreview.length > 0 && (
+              <p className="text-xs text-[#6B8FC2]">{imagenesPreview.length} foto{imagenesPreview.length !== 1 ? 's' : ''}</p>
+            )}
+          </div>
 
-          {imagenPreview ? (
-            <div className="relative rounded-2xl overflow-hidden border border-[#EEEEEE]">
-              <img
-                src={imagenPreview}
-                alt="Preview"
-                className="w-full object-cover max-h-64"
-              />
+          {imagenesPreview.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {imagenesPreview.map((img, i) => (
+                <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-[#EEEEEE]">
+                  <img src={img.url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => handleEliminarImagen(i)}
+                    className="absolute top-1 right-1 w-6 h-6 bg-black/60 text-white rounded-full flex items-center justify-center text-sm leading-none"
+                  >×</button>
+                </div>
+              ))}
               <button
-                onClick={handleEliminarImagen}
-                className="absolute top-2 right-2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center text-lg leading-none hover:bg-black/70"
+                onClick={() => fileInputRef.current?.click()}
+                className="aspect-square border-2 border-dashed border-[#DDDDDD] rounded-xl flex flex-col items-center justify-center gap-1 hover:border-[#6B8FC2] transition-colors"
               >
-                ×
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#AAAAAA" strokeWidth="1.5">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                <span className="text-xs text-[#AAAAAA]">Agregar</span>
               </button>
             </div>
-          ) : (
+          )}
+
+          {imagenesPreview.length === 0 && (
             <button
               onClick={() => fileInputRef.current?.click()}
               className="w-full h-24 border-2 border-dashed border-[#DDDDDD] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#6B8FC2] hover:bg-[#F8FAFF] transition-colors"
@@ -335,36 +338,26 @@ export default function Preguntas() {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#AAAAAA" strokeWidth="1.5">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
               </svg>
-              <span className="text-xs text-[#AAAAAA]">Subir foto</span>
+              <span className="text-xs text-[#AAAAAA]">Subir fotos</span>
             </button>
           )}
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImagenChange}
-            className="hidden"
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImagenesChange} className="hidden" />
         </div>
 
         {/* Acciones */}
         <div className="flex gap-3">
-          <button
-            onClick={handleSaltar}
-            className="flex-1 h-12 border-2 border-[#EEEEEE] rounded-2xl text-sm text-[#888888] bg-white hover:bg-[#F8F8F8] active:scale-[0.98]"
-          >
+          <button onClick={handleSaltar} className="flex-1 h-12 border-2 border-[#EEEEEE] rounded-2xl text-sm text-[#888888] bg-white hover:bg-[#F8F8F8] active:scale-[0.98]">
             Saltar
           </button>
           <button
             onClick={handleGuardar}
-            disabled={loading || (!respuesta.trim() && !imagenFile && !imagenPreview)}
+            disabled={loading || (!respuesta.trim() && imagenesPreview.length === 0)}
             className="flex-[2] h-12 bg-[#141414] text-white text-sm font-medium rounded-2xl hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40"
           >
-            {subiendoImagen ? 'Subiendo foto...' : loading ? 'Guardando...' : indice < preguntas.length - 1 ? 'Guardar y seguir →' : 'Finalizar →'}
+            {subiendoImagen ? 'Subiendo fotos...' : loading ? 'Guardando...' : indice < preguntas.length - 1 ? 'Guardar y seguir →' : 'Finalizar →'}
           </button>
         </div>
-
       </div>
     </main>
   )
