@@ -226,6 +226,7 @@ export default function ColaborarPage() {
         id_usuario: userId,
         contenido: respuesta,
         imagen_url: imagenUrl,
+        nombre_autor: nombreColaborador || 'Colaborador',
       })
     }
 
@@ -388,7 +389,22 @@ export default function ColaborarPage() {
           </div>
         </div>
         <div className="bg-[#E8EFF8] rounded-2xl px-4 py-3 border-l-4 border-[#6B8FC2]">
-          <p className="text-xs text-[#6B8FC2] leading-relaxed">Consejo: describí quiénes estaban, cuándo y dónde ocurrió. Cuanto más detalle, mejor.</p>
+          <p className="text-xs text-[#6B8FC2] leading-relaxed">
+            {(() => {
+              const consejos: Record<string, string[]> = {
+                'Raíces e infancia': ['Pensá en olores, sonidos o lugares específicos de tu infancia.', 'Nombrá a las personas por su nombre, hacé la historia más personal.', '¿Había alguna rutina o tradición familiar que recuerdes con cariño?'],
+                'Valores y personalidad': ['Contá una situación concreta donde pusiste en práctica ese valor.', 'Pensá en alguien que te haya influenciado y cómo lo hizo.', '¿Hubo un momento que te cambió la forma de ver la vida?'],
+                'Familia propia y pareja': ['¿Cómo era un día típico en familia? Los detalles pequeños importan.', 'Contá una anécdota divertida o emotiva que los defina como familia.', 'Nombrá a cada persona y algo especial que la caracterice.'],
+                'Trabajo y profesión': ['Contá una anécdota concreta, no solo el puesto que tenías.', '¿Hubo algún momento difícil o un logro del que estés orgulloso?', '¿Qué aprendiste de ese trabajo que te sirvió para la vida?'],
+                'Hobbies y deportes': ['¿Cómo empezaste? ¿Hubo alguien que te introdujo a ese hobby?', 'Contá el mejor momento que viviste relacionado a esta pasión.', '¿Alguna vez compartiste este hobby con alguien especial?'],
+                'Viajes': ['Contá un momento específico del viaje, no solo el destino.', '¿Hubo algo inesperado que pasó en ese viaje?', '¿Qué persona conociste o qué comida probaste que no olvidás?'],
+                'Amistades': ['¿Cómo se conocieron? Los comienzos de las amistades son siempre especiales.', 'Contá una historia que solo vos y esa persona saben.', '¿Hubo alguna época donde esa amistad fue especialmente importante?'],
+                'Momentos memorables': ['Describí dónde estabas, quiénes estaban y cómo te sentías.', '¿Por qué ese momento se quedó grabado en tu memoria?', 'Contá los detalles que hacen único ese recuerdo.'],
+              }
+              const lista = consejos[topicoActivo?.nombre_es || ''] || ['Describí quiénes estaban, cuándo y dónde ocurrió.', 'Los detalles pequeños son los que hacen única una historia.', 'Escribí con tus propias palabras, sin preocuparte por la forma.']
+              return lista[indice % lista.length]
+            })()}
+          </p>
         </div>
         <div className="bg-white border-2 border-[#141414] rounded-2xl p-5">
           <p className="text-sm text-[#141414] leading-relaxed">{textoPregunta}</p>

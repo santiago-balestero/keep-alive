@@ -57,51 +57,55 @@ export default function SeleccionTopicos() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F5F5]">
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
       <Header backUrl={`/dashboard/historia/${historiaId}`} backLabel="Historia" />
 
       <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
         <div>
-          <h1 className="text-2xl font-medium text-[#141414]">Elegí los tópicos</h1>
-          <p className="text-sm text-[#888888] mt-1">Seleccioná los temas que querés incluir</p>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--color-texto)' }}>Elegí los tópicos</h1>
+          <p style={{ fontSize: 14, color: 'var(--color-gris)', marginTop: 4 }}>Seleccioná los temas que querés incluir</p>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {topicos.map((t) => {
             const activo = seleccionados.includes(t.id)
             return (
               <button
                 key={t.id}
                 onClick={() => toggleTopico(t.id)}
-                className={`flex items-center gap-4 p-4 rounded-2xl border-2 bg-white text-left transition-all active:scale-[0.99] ${
-                  activo
-                    ? 'border-[#141414] shadow-sm'
-                    : 'border-[#EEEEEE] hover:border-[#CCCCCC]'
-                }`}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 16, padding: 16,
+                  borderRadius: 16, background: 'white', cursor: 'pointer', width: '100%',
+                  border: activo ? '2px solid var(--color-terracota)' : '2px solid var(--color-borde)',
+                  textAlign: 'left'
+                }}
               >
-                <div className={`w-5 h-5 rounded-md flex-shrink-0 border-2 flex items-center justify-center transition-all ${
-                  activo ? 'bg-[#141414] border-[#141414]' : 'border-[#DDDDDD]'
-                }`}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                  border: activo ? '2px solid var(--color-terracota)' : '2px solid var(--color-borde)',
+                  background: activo ? 'var(--color-terracota)' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
                   {activo && (
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                       <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   )}
                 </div>
-                <span className="text-sm text-[#141414]">{t.nombre_es}</span>
+                <span style={{ fontSize: 14, color: 'var(--color-texto)' }}>{t.nombre_es}</span>
               </button>
             )
           })}
         </div>
 
-        <div className="sticky bottom-6 flex items-center justify-between bg-white border border-[#EEEEEE] rounded-2xl px-4 py-3 shadow-sm">
-          <span className="text-sm text-[#888888]">
+        <div style={{ position: 'sticky', bottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 16, padding: '12px 16px' }}>
+          <span style={{ fontSize: 14, color: 'var(--color-gris)' }}>
             {seleccionados.length} tópico{seleccionados.length !== 1 ? 's' : ''} seleccionado{seleccionados.length !== 1 ? 's' : ''}
           </span>
           <button
             onClick={handleSubmit}
             disabled={seleccionados.length === 0 || loading}
-            className="h-9 px-5 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40"
+            style={{ height: 36, padding: '0 20px', background: 'var(--color-terracota)', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 10, cursor: 'pointer', opacity: seleccionados.length === 0 || loading ? 0.4 : 1 }}
           >
             {loading ? 'Guardando...' : 'Empezar →'}
           </button>

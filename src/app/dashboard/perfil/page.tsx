@@ -94,62 +94,61 @@ export default function Perfil() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F5F5]">
-      <header className="bg-white border-b border-[#DDDDDD] px-6 py-3 flex items-center justify-between">
-        <Image src="/logo.jpg" alt="Keep Alive" width={60} height={60} className="object-contain" />
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="text-sm text-[#6B8FC2] hover:underline"
-        >
-          ← Inicio
-        </button>
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
+      <header className="page-header">
+        <div className="page-header-inner">
+          <Image src="/logo.jpg" alt="Keep Alive" width={36} height={36} style={{ objectFit: 'contain', borderRadius: 12, cursor: 'pointer' }} onClick={() => router.push('/dashboard')} />
+          <button onClick={() => router.push('/dashboard')} style={{ fontSize: 14, color: 'var(--color-azul)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            ← Inicio
+          </button>
+        </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-6 py-8 flex flex-col gap-6">
+      <div className="page-container" style={{ paddingTop: 32, paddingBottom: 40, display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-        {/* Avatar y datos básicos */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-16 h-16 rounded-full bg-[#141414] flex items-center justify-center text-white text-2xl font-medium">
+        {/* Avatar */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--color-terracota)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 600 }}>
             {nombre ? nombre[0].toUpperCase() : '?'}
           </div>
-          <div className="text-center">
-            <p className="text-base font-medium text-[#141414] capitalize">{nombre}</p>
-            <p className="text-sm text-[#888888]">{email}</p>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-texto)' }}>{nombre}</p>
+            <p style={{ fontSize: 14, color: 'var(--color-gris)' }}>{email}</p>
           </div>
         </div>
 
-        <div className="h-px bg-[#DDDDDD]" />
+        <div style={{ height: 1, background: 'var(--color-borde)' }} />
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white border border-[#DDDDDD] rounded-xl p-4 flex flex-col gap-1">
-            <p className="text-xs text-[#888888] uppercase tracking-wide">Historias</p>
-            <p className="text-2xl font-medium text-[#141414]">{totalHistorias}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <p style={{ fontSize: 11, color: 'var(--color-gris)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Historias</p>
+            <p style={{ fontSize: 28, fontWeight: 700, color: 'var(--color-terracota)' }}>{totalHistorias}</p>
           </div>
-          <div className="bg-white border border-[#DDDDDD] rounded-xl p-4 flex flex-col gap-1">
-            <p className="text-xs text-[#888888] uppercase tracking-wide">Plan</p>
-            <p className="text-2xl font-medium text-[#141414]">Gratis</p>
+          <div style={{ background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <p style={{ fontSize: 11, color: 'var(--color-gris)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Plan</p>
+            <p style={{ fontSize: 28, fontWeight: 700, color: 'var(--color-azul)' }}>Gratis</p>
           </div>
         </div>
 
         {/* Editar nombre */}
-        <div className="bg-white border border-[#DDDDDD] rounded-xl p-4 flex flex-col gap-3">
-          <h2 className="text-xs font-medium text-[#888888] uppercase tracking-wide">Nombre</h2>
-          <form onSubmit={handleGuardarNombre} className="flex flex-col gap-3">
+        <div style={{ background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <h2 style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-gris)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Nombre</h2>
+          <form onSubmit={handleGuardarNombre} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <input
               type="text"
               value={nombre}
               onChange={(e) => { setNombre(e.target.value); setMensajeNombre('') }}
               placeholder="Tu nombre"
               required
-              className="w-full h-10 px-3 text-sm border border-[#DDDDDD] rounded-md bg-[#F2F2F2] text-[#141414] placeholder-[#AAAAAA] focus:outline-none focus:border-[#6B8FC2]"
+              style={{ width: '100%', height: 44, padding: '0 14px', fontSize: 14, border: '1.5px solid var(--color-borde)', borderRadius: 12, background: 'var(--color-crema)', color: 'var(--color-texto)', outline: 'none' }}
             />
-            {errorNombre && <p className="text-xs text-red-500">{errorNombre}</p>}
-            {mensajeNombre && <p className="text-xs text-[#6B8FC2]">✓ {mensajeNombre}</p>}
+            {errorNombre && <p style={{ fontSize: 12, color: '#C0522A' }}>{errorNombre}</p>}
+            {mensajeNombre && <p style={{ fontSize: 12, color: 'var(--color-salvia)' }}>✓ {mensajeNombre}</p>}
             <button
               type="submit"
               disabled={loadingNombre}
-              className="h-10 bg-[#141414] text-white text-sm font-medium rounded-md hover:bg-[#333333] transition-colors disabled:opacity-50"
+              style={{ height: 44, background: 'var(--color-terracota)', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 12, cursor: 'pointer', opacity: loadingNombre ? 0.6 : 1 }}
             >
               {loadingNombre ? 'Guardando...' : 'Guardar nombre'}
             </button>
@@ -157,16 +156,16 @@ export default function Perfil() {
         </div>
 
         {/* Cambiar contraseña */}
-        <div className="bg-white border border-[#DDDDDD] rounded-xl p-4 flex flex-col gap-3">
-          <h2 className="text-xs font-medium text-[#888888] uppercase tracking-wide">Cambiar contraseña</h2>
-          <form onSubmit={handleGuardarPassword} className="flex flex-col gap-3">
+        <div style={{ background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <h2 style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-gris)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Cambiar contraseña</h2>
+          <form onSubmit={handleGuardarPassword} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <input
               type="password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setMensajePassword('') }}
               placeholder="Nueva contraseña"
               required
-              className="w-full h-10 px-3 text-sm border border-[#DDDDDD] rounded-md bg-[#F2F2F2] text-[#141414] placeholder-[#AAAAAA] focus:outline-none focus:border-[#6B8FC2]"
+              style={{ width: '100%', height: 44, padding: '0 14px', fontSize: 14, border: '1.5px solid var(--color-borde)', borderRadius: 12, background: 'var(--color-crema)', color: 'var(--color-texto)', outline: 'none' }}
             />
             <input
               type="password"
@@ -174,14 +173,14 @@ export default function Perfil() {
               onChange={(e) => { setConfirmar(e.target.value); setMensajePassword('') }}
               placeholder="Confirmar contraseña"
               required
-              className="w-full h-10 px-3 text-sm border border-[#DDDDDD] rounded-md bg-[#F2F2F2] text-[#141414] placeholder-[#AAAAAA] focus:outline-none focus:border-[#6B8FC2]"
+              style={{ width: '100%', height: 44, padding: '0 14px', fontSize: 14, border: '1.5px solid var(--color-borde)', borderRadius: 12, background: 'var(--color-crema)', color: 'var(--color-texto)', outline: 'none' }}
             />
-            {errorPassword && <p className="text-xs text-red-500">{errorPassword}</p>}
-            {mensajePassword && <p className="text-xs text-[#6B8FC2]">✓ {mensajePassword}</p>}
+            {errorPassword && <p style={{ fontSize: 12, color: '#C0522A' }}>{errorPassword}</p>}
+            {mensajePassword && <p style={{ fontSize: 12, color: 'var(--color-salvia)' }}>✓ {mensajePassword}</p>}
             <button
               type="submit"
               disabled={loadingPassword}
-              className="h-10 bg-[#141414] text-white text-sm font-medium rounded-md hover:bg-[#333333] transition-colors disabled:opacity-50"
+              style={{ height: 44, background: 'var(--color-terracota)', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 12, cursor: 'pointer', opacity: loadingPassword ? 0.6 : 1 }}
             >
               {loadingPassword ? 'Guardando...' : 'Cambiar contraseña'}
             </button>
@@ -191,7 +190,7 @@ export default function Perfil() {
         {/* Cerrar sesión */}
         <button
           onClick={handleLogout}
-          className="w-full h-10 border border-[#DDDDDD] rounded-md text-sm text-[#888888] bg-white hover:bg-[#F2F2F2] transition-colors"
+          style={{ height: 44, border: '1.5px solid var(--color-borde)', borderRadius: 12, fontSize: 14, color: 'var(--color-gris)', background: 'white', cursor: 'pointer' }}
         >
           Cerrar sesión
         </button>

@@ -99,11 +99,11 @@ export default function DetalleHistoria() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-[#F5F5F5]">
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
       <Header backUrl="/dashboard" backLabel="Inicio" />
       <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-2xl h-20 animate-pulse border border-[#EEEEEE]" />
+          <div key={i} style={{ background: 'var(--color-crema-oscuro)', borderRadius: 16, height: 80 }} />
         ))}
       </div>
     </main>
@@ -112,101 +112,95 @@ export default function DetalleHistoria() {
   if (!historia) return null
 
   return (
-    <main className="min-h-screen bg-[#F5F5F5]">
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
       <Header backUrl="/dashboard" backLabel="Inicio" />
 
       <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-medium text-[#141414]">{historia.titulo}</h1>
-            <p className="text-sm text-[#888888]">
-              {historia.tipo === 'autobiografia'
-                ? 'Autobiografía'
-                : `Biografía de regalo · ${historia.nombre_protagonista}`}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--color-texto)' }}>{historia.titulo}</h1>
+            <p style={{ fontSize: 14, color: 'var(--color-gris)' }}>
+              {historia.tipo === 'autobiografia' ? 'Autobiografía' : `Biografía de regalo · ${historia.nombre_protagonista}`}
             </p>
             {historia.descripcion && (
-              <p className="text-xs text-[#AAAAAA] mt-1">{historia.descripcion}</p>
+              <p style={{ fontSize: 12, color: 'var(--color-gris)', marginTop: 4 }}>{historia.descripcion}</p>
             )}
           </div>
           <button
             onClick={() => router.push(`/dashboard/historia/${historiaId}/editar`)}
-            className="flex-shrink-0 text-xs text-[#6B8FC2] hover:underline mt-1"
+            style={{ flexShrink: 0, fontSize: 13, color: 'var(--color-azul)', background: 'none', border: 'none', cursor: 'pointer', marginTop: 4 }}
           >
             Editar
           </button>
         </div>
 
         {/* Progreso general */}
-        <div className="bg-white border border-[#EEEEEE] rounded-2xl p-5 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[#141414]">Progreso general</span>
-            <span className="text-sm font-medium text-[#6B8FC2]">{porcentaje}%</span>
+        <div style={{ background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-texto)' }}>Progreso general</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-terracota)' }}>{porcentaje}%</span>
           </div>
-          <div className="h-2 bg-[#EEEEEE] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#6B8FC2] rounded-full transition-all duration-700"
-              style={{ width: `${porcentaje}%` }}
-            />
+          <div style={{ height: 8, background: 'var(--color-crema-oscuro)', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: 'var(--color-terracota)', borderRadius: 8, width: `${porcentaje}%`, transition: 'width 0.7s' }} />
           </div>
-          <p className="text-xs text-[#888888]">
+          <p style={{ fontSize: 12, color: 'var(--color-gris)' }}>
             {totalRespondidas} de {totalPreguntas} preguntas respondidas
           </p>
         </div>
 
-        <div className="h-px bg-[#EEEEEE]" />
+        <div style={{ height: 1, background: 'var(--color-borde)' }} />
 
         {/* Tópicos */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-medium text-[#888888] uppercase tracking-widest">Tópicos</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-gris)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Tópicos</h2>
             <button
               onClick={() => router.push(`/dashboard/historia/${historiaId}/topicos`)}
-              className="text-xs text-[#6B8FC2] hover:underline"
+              style={{ fontSize: 13, color: 'var(--color-azul)', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               + Agregar
             </button>
           </div>
 
           {progreso.length === 0 ? (
-            <div className="bg-white border border-[#EEEEEE] rounded-2xl p-8 text-center flex flex-col gap-2">
-              <p className="text-sm text-[#888888]">No hay tópicos seleccionados.</p>
+            <div style={{ background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 16, padding: 32, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ fontSize: 14, color: 'var(--color-gris)' }}>No hay tópicos seleccionados.</p>
               <button
                 onClick={() => router.push(`/dashboard/historia/${historiaId}/topicos`)}
-                className="text-sm text-[#6B8FC2] hover:underline"
+                style={{ fontSize: 13, color: 'var(--color-azul)', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Seleccionar tópicos →
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {progreso.map(({ topico, total, respondidas }) => {
                 const pct = total > 0 ? Math.round((respondidas / total) * 100) : 0
                 const completo = respondidas === total && total > 0
-
                 return (
                   <button
                     key={topico.id}
                     onClick={() => router.push(`/dashboard/historia/${historiaId}/preguntas/${topico.id}`)}
-                    className="bg-white border border-[#EEEEEE] rounded-2xl px-4 py-3 flex flex-col gap-2 hover:border-[#6B8FC2] active:scale-[0.99] text-left transition-all"
+                    style={{
+                      background: 'white', border: '1.5px solid var(--color-borde)',
+                      borderRadius: 16, padding: '12px 16px',
+                      display: 'flex', flexDirection: 'column', gap: 8,
+                      textAlign: 'left', cursor: 'pointer', width: '100%'
+                    }}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-[#141414]">{topico.nombre_es}</span>
-                      <div className="flex items-center gap-2">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 14, color: 'var(--color-texto)' }}>{topico.nombre_es}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {completo && (
-                          <span className="text-xs px-2 py-0.5 bg-[#E8EFF8] text-[#6B8FC2] rounded-full">Completo</span>
+                          <span style={{ fontSize: 11, padding: '2px 8px', background: '#EEF4EC', color: 'var(--color-salvia)', borderRadius: 20, fontWeight: 500 }}>Completo</span>
                         )}
-                        <span className="text-[#6B8FC2] text-lg leading-none">›</span>
+                        <span style={{ color: 'var(--color-azul)', fontSize: 18 }}>›</span>
                       </div>
                     </div>
-                    <div className="h-1 bg-[#EEEEEE] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#6B8FC2] rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
+                    <div style={{ height: 4, background: 'var(--color-crema-oscuro)', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', background: 'var(--color-azul)', borderRadius: 4, width: `${pct}%` }} />
                     </div>
-                    <p className="text-xs text-[#888888]">
-                      {respondidas} / {total} respondidas
-                    </p>
+                    <p style={{ fontSize: 12, color: 'var(--color-gris)' }}>{respondidas} / {total} respondidas</p>
                   </button>
                 )
               })}
@@ -215,17 +209,17 @@ export default function DetalleHistoria() {
         </div>
 
         {/* Acciones */}
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
             <button
               onClick={() => router.push(`/dashboard/historia/${historiaId}/colaboradores`)}
-              className="flex-1 h-11 border-2 border-[#EEEEEE] rounded-xl text-sm text-[#4A4A4A] bg-white hover:bg-[#F8F8F8] active:scale-[0.98]"
+              style={{ flex: 1, height: 44, border: '1.5px solid var(--color-borde)', borderRadius: 12, fontSize: 14, color: 'var(--color-texto)', background: 'white', cursor: 'pointer' }}
             >
               Colaboradores
             </button>
             <button
               onClick={() => router.push(`/dashboard/historia/${historiaId}/vista-previa`)}
-              className="flex-1 h-11 border-2 border-[#EEEEEE] rounded-xl text-sm text-[#4A4A4A] bg-white hover:bg-[#F8F8F8] active:scale-[0.98]"
+              style={{ flex: 1, height: 44, border: '1.5px solid var(--color-borde)', borderRadius: 12, fontSize: 14, color: 'var(--color-texto)', background: 'white', cursor: 'pointer' }}
             >
               Ver historia
             </button>
@@ -233,14 +227,14 @@ export default function DetalleHistoria() {
           {primerTopicoIncompleto && (
             <button
               onClick={() => router.push(`/dashboard/historia/${historiaId}/preguntas/${primerTopicoIncompleto.topico.id}`)}
-              className="w-full h-11 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#333333] active:scale-[0.98]"
+              style={{ width: '100%', height: 44, background: 'var(--color-terracota)', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 12, cursor: 'pointer' }}
             >
               Responder preguntas →
             </button>
           )}
           <button
             onClick={() => setConfirmarEliminar(true)}
-            className="w-full h-11 border-2 border-red-100 rounded-xl text-sm text-red-400 bg-white hover:bg-red-50 active:scale-[0.98]"
+            style={{ width: '100%', height: 44, border: '1.5px solid #F5C4B0', borderRadius: 12, fontSize: 14, color: '#C0522A', background: 'white', cursor: 'pointer' }}
           >
             Eliminar historia
           </button>
@@ -248,25 +242,25 @@ export default function DetalleHistoria() {
 
         {/* Modal confirmar eliminar */}
         {confirmarEliminar && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4 shadow-xl">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-base font-medium text-[#141414]">Eliminar historia</h2>
-                <p className="text-sm text-[#888888]">
-                  ¿Estás seguro que querés eliminar <strong className="text-[#141414]">{historia.titulo}</strong>? Esta acción no se puede deshacer.
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }}>
+            <div style={{ background: 'white', borderRadius: 20, padding: 24, width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-texto)' }}>Eliminar historia</h2>
+                <p style={{ fontSize: 14, color: 'var(--color-gris)' }}>
+                  ¿Estás seguro que querés eliminar <strong style={{ color: 'var(--color-texto)' }}>{historia.titulo}</strong>? Esta acción no se puede deshacer.
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div style={{ display: 'flex', gap: 12 }}>
                 <button
                   onClick={() => setConfirmarEliminar(false)}
-                  className="flex-1 h-11 border-2 border-[#EEEEEE] rounded-xl text-sm text-[#4A4A4A] hover:bg-[#F8F8F8] active:scale-[0.98]"
+                  style={{ flex: 1, height: 44, border: '1.5px solid var(--color-borde)', borderRadius: 12, fontSize: 14, color: 'var(--color-texto)', background: 'white', cursor: 'pointer' }}
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleEliminar}
                   disabled={eliminando}
-                  className="flex-1 h-11 bg-red-500 text-white text-sm font-medium rounded-xl hover:bg-red-600 active:scale-[0.98] disabled:opacity-50"
+                  style={{ flex: 1, height: 44, background: '#C0522A', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 12, cursor: 'pointer', opacity: eliminando ? 0.6 : 1 }}
                 >
                   {eliminando ? 'Eliminando...' : 'Eliminar'}
                 </button>

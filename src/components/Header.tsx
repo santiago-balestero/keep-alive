@@ -29,7 +29,7 @@ export default function Header({ backUrl, backLabel, rightContent, title }: Prop
             <button
               onClick={() => router.push(backUrl)}
               style={{
-                fontSize: 14, color: '#6B8FC2', background: 'none',
+                fontSize: 14, color: 'var(--color-azul)', background: 'none',
                 border: 'none', cursor: 'pointer', flexShrink: 0
               }}
             >
@@ -37,7 +37,7 @@ export default function Header({ backUrl, backLabel, rightContent, title }: Prop
             </button>
           )}
           {title && (
-            <span style={{ fontSize: 14, fontWeight: 500, color: '#141414', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-texto)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
               {title}
             </span>
           )}

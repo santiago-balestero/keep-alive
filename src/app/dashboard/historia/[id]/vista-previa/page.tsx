@@ -34,6 +34,7 @@ type Capitulo = {
   topico: Topico
   preguntas: Pregunta[]
   respuestas: Record<number, string>
+  autores: Record<number, string>
   imagenes: Record<number, string[]>
   narrativa?: string
 }
@@ -69,12 +70,14 @@ export default function VistaPrevia() {
 
       const { data: respuestasData } = await supabase
         .from('respuestas')
-        .select('id_pregunta, contenido')
+        .select('id_pregunta, contenido, nombre_autor')
         .eq('id_historia', historiaId)
 
       const mapaRespuestas: Record<number, string> = {}
+      const mapaAutores: Record<number, string> = {}
       respuestasData?.forEach((r: any) => {
         mapaRespuestas[r.id_pregunta] = r.contenido
+        if (r.nombre_autor) mapaAutores[r.id_pregunta] = r.nombre_autor
       })
 
       const { data: imagenesData } = await supabase
@@ -105,6 +108,7 @@ export default function VistaPrevia() {
             topico: t,
             preguntas: preguntasConRespuesta,
             respuestas: mapaRespuestas,
+            autores: mapaAutores,
             imagenes: mapaImagenes,
           }
         })
@@ -125,8 +129,9 @@ export default function VistaPrevia() {
   .map((p) => {
     const pregunta = esAutobiografia ? p.texto_es : p.texto_es_tercera
     const respuesta = cap.respuestas[p.id]
+    const autor = cap.autores[p.id]
     const tieneImagen = !!cap.imagenes[p.id]
-    return `Pregunta: ${pregunta}\nRespuesta: ${respuesta}${tieneImagen ? '\n[Esta respuesta tiene una foto adjunta]' : ''}`
+    return `Pregunta: ${pregunta}\nRespuesta${autor ? ` (escrita por ${autor})` : ''}: ${respuesta}${tieneImagen ? '\n[Esta respuesta tiene una foto adjunta]' : ''}`
   })
   .join('\n\n')
 
@@ -695,16 +700,23 @@ return data.texto || ''
                       </div>
                     )
                   ) : (
-                    capActual.preguntas.map((p) => (
-                      <div key={p.id} className="flex flex-col gap-2">
-                        <p className="text-xs text-[#6B8FC2] italic">
-                          {historia.tipo === 'autobiografia' ? p.texto_es : p.texto_es_tercera}
-                        </p>
-                        <p className="text-sm text-[#141414] leading-relaxed">
-                          {capActual.respuestas[p.id]}
-                        </p>
-                      </div>
-                    ))
+                    <div className="flex flex-col gap-6">
+                      {capActual.preguntas.map((p) => (
+                        <div key={p.id} className="flex flex-col gap-2">
+                          <p className="text-xs text-[#6B8FC2] italic">
+                            {historia.tipo === 'autobiografia' ? p.texto_es : p.texto_es_tercera}
+                          </p>
+                          <p className="text-sm text-[#141414] leading-relaxed">
+                            {capActual.respuestas[p.id]}
+                          </p>
+                          {capActual.autores[p.id] && (
+                            <p className="text-xs text-[#AAAAAA] italic text-right">
+                              — {capActual.autores[p.id]}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
 

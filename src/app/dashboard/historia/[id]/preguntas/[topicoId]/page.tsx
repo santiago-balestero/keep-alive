@@ -172,11 +172,14 @@ export default function Preguntas() {
         .eq('id_pregunta', preguntaActual.id)
         .eq('id_usuario', user.id)
     } else {
+      // Obtener nombre del autor
+      const nombreAutor = user.user_metadata?.nombre || user.email?.split('@')[0] || 'Autor'
       await supabase.from('respuestas').insert({
         id_historia: historiaId,
         id_pregunta: preguntaActual.id,
         id_usuario: user.id,
         contenido: respuesta,
+        nombre_autor: nombreAutor,
       })
     }
 
@@ -280,13 +283,13 @@ export default function Preguntas() {
     : preguntaActual?.texto_es_tercera
 
   if (preguntas.length === 0) return (
-    <main className="min-h-screen bg-[#F5F5F5] flex items-center justify-center">
-      <p className="text-sm text-[#888888]">Cargando preguntas...</p>
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ fontSize: 14, color: 'var(--color-gris)' }}>Cargando preguntas...</p>
     </main>
   )
 
   return (
-    <main className="min-h-screen bg-[#F5F5F5]">
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
       <Header backUrl={`/dashboard/historia/${historiaId}`} backLabel="Historia" />
 
       <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -297,25 +300,102 @@ export default function Preguntas() {
             <span className="font-medium">{topicoNombre}</span>
             <span>{indice + 1} / {preguntas.length}</span>
           </div>
-          <div className="h-1.5 bg-[#EEEEEE] rounded-full overflow-hidden">
-            <div className="h-full bg-[#6B8FC2] rounded-full transition-all duration-500"
-              style={{ width: `${((indice + 1) / preguntas.length) * 100}%` }} />
+          <div style={{ height: 6, background: 'var(--color-crema-oscuro)', borderRadius: 6, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: 'var(--color-terracota)', borderRadius: 6, width: `${((indice + 1) / preguntas.length) * 100}%`, transition: 'width 0.5s' }} />
           </div>
         </div>
 
         {/* Tip */}
-        <div className="bg-[#E8EFF8] rounded-2xl px-4 py-3 border-l-4 border-[#6B8FC2]">
-          <p className="text-xs text-[#6B8FC2] leading-relaxed">
-            Consejo: describí quiénes estaban, cuándo y dónde ocurrió. Cuanto más detalle, mejor.
+        <div style={{ background: '#FBF4EF', borderRadius: 16, padding: '12px 16px', borderLeft: '4px solid var(--color-terracota)' }}>
+          <p style={{ fontSize: 13, color: 'var(--color-terracota)', lineHeight: 1.6 }}>
+            {(() => {
+              const consejos: Record<string, string[]> = {
+                'Raíces e infancia': [
+                  'Pensá en olores, sonidos o lugares específicos de tu infancia.',
+                  'Nombrá a las personas por su nombre, hacé la historia más personal.',
+                  '¿Había alguna rutina o tradición familiar que recuerdes con cariño?',
+                ],
+                'Valores y personalidad': [
+                  'Contá una situación concreta donde pusiste en práctica ese valor.',
+                  'Pensá en alguien que te haya influenciado y cómo lo hizo.',
+                  '¿Hubo un momento que te cambió la forma de ver la vida?',
+                ],
+                'Familia propia y pareja': [
+                  '¿Cómo era un día típico en familia? Los detalles pequeños importan.',
+                  'Contá una anécdota divertida o emotiva que los defina como familia.',
+                  'Nombrá a cada persona y algo especial que la caracterice.',
+                ],
+                'Trabajo y profesión': [
+                  'Contá una anécdota concreta, no solo el puesto que tenías.',
+                  '¿Hubo algún momento difícil o un logro del que estés orgulloso?',
+                  '¿Qué aprendiste de ese trabajo que te sirvió para la vida?',
+                ],
+                'Hobbies y deportes': [
+                  '¿Cómo empezaste? ¿Hubo alguien que te introdujo a ese hobby?',
+                  'Contá el mejor momento que viviste relacionado a esta pasión.',
+                  '¿Alguna vez compartiste este hobby con alguien especial?',
+                ],
+                'Viajes': [
+                  'Contá un momento específico del viaje, no solo el destino.',
+                  '¿Hubo algo inesperado que pasó en ese viaje?',
+                  '¿Qué persona conociste o qué comida probaste que no olvidás?',
+                ],
+                'Amistades': [
+                  '¿Cómo se conocieron? Los comienzos de las amistades son siempre especiales.',
+                  'Contá una historia que solo vos y esa persona saben.',
+                  '¿Hubo alguna época donde esa amistad fue especialmente importante?',
+                ],
+                'Música, cine y literatura': [
+                  '¿Hay una canción o película que te recuerde a alguien o a una época?',
+                  'Contá dónde o con quién descubriste ese libro, música o película.',
+                  '¿Alguna obra te cambió la forma de pensar o sentir?',
+                ],
+                'Mascotas': [
+                  'Contá cómo llegó esa mascota a tu vida.',
+                  '¿Había alguna costumbre o rutina especial con ella?',
+                  '¿Hay una historia graciosa o emotiva que recuerdes?',
+                ],
+                'Nietos y ahijados': [
+                  'Contá el momento en que los conociste o supiste que iban a nacer.',
+                  '¿Hay algo especial que compartas solo con ellos?',
+                  'Describí cómo es cada uno con sus propias palabras.',
+                ],
+                'Homenaje / En memoria': [
+                  'Contá un recuerdo específico con esa persona que quieras preservar.',
+                  '¿Qué enseñanza o valor te dejó esa persona?',
+                  '¿Cómo quisieras que la recuerden quienes no la conocieron?',
+                ],
+                'Deseos y mensajes especiales': [
+                  'Escribí como si le hablaras directamente a esa persona.',
+                  '¿Qué le dirías hoy que quizás nunca pudiste decirle?',
+                  'Pensá en qué querés que recuerden de vos dentro de muchos años.',
+                ],
+                'Momentos memorables': [
+                  'Describí dónde estabas, quiénes estaban y cómo te sentías.',
+                  '¿Por qué ese momento se quedó grabado en tu memoria?',
+                  'Contá los detalles que hacen único ese recuerdo.',
+                ],
+              }
+              const lista = consejos[topicoNombre] || [
+                'Describí quiénes estaban, cuándo y dónde ocurrió.',
+                'Los detalles pequeños son los que hacen única una historia.',
+                'Escribí con tus propias palabras, sin preocuparte por la forma.',
+              ]
+              return lista[preguntaActual?.id ? Number(preguntaActual.id) % lista.length : 0]
+            })()}
           </p>
         </div>
 
         {/* Pregunta */}
-        <div className={`rounded-2xl p-5 border-2 ${preguntaActual?.personalizada ? 'border-[#6B8FC2] bg-[#EEF3FA]' : 'bg-white border-[#141414]'}`}>
+        <div style={{
+          background: preguntaActual?.personalizada ? '#FBF4EF' : 'white',
+          border: `2px solid ${preguntaActual?.personalizada ? 'var(--color-terracota)' : 'var(--color-texto)'}`,
+          borderRadius: 16, padding: 20
+        }}>
           {preguntaActual?.personalizada && (
-            <p className="text-xs text-[#6B8FC2] font-medium mb-2">Pregunta personalizada</p>
+            <p style={{ fontSize: 12, color: 'var(--color-terracota)', fontWeight: 600, marginBottom: 8 }}>Pregunta personalizada</p>
           )}
-          <p className="text-sm text-[#141414] leading-relaxed">{textoPregunta}</p>
+          <p style={{ fontSize: 14, color: 'var(--color-texto)', lineHeight: 1.6 }}>{textoPregunta}</p>
         </div>
 
         {/* Respuesta */}

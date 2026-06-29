@@ -113,12 +113,9 @@ export default function Colaboradores() {
 
   const estadoBadge = (estado: string) => {
     switch (estado) {
-      case 'aceptado':
-        return 'bg-[#E8EFF8] text-[#6B8FC2]'
-      case 'rechazado':
-        return 'bg-[#F5F5F5] text-[#AAAAAA]'
-      default:
-        return 'bg-[#F2F2F2] text-[#888888]'
+      case 'aceptado': return { background: '#EEF4EC', color: 'var(--color-salvia)' }
+      case 'rechazado': return { background: '#F5F0EB', color: 'var(--color-gris)' }
+      default: return { background: '#F5F0EB', color: 'var(--color-gris)' }
     }
   }
 
@@ -131,58 +128,54 @@ export default function Colaboradores() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F5F5]">
-      <header className="bg-white border-b border-[#DDDDDD] px-6 py-3 flex items-center justify-between">
-        <Image src="/logo.jpg" alt="Keep Alive" width={60} height={60} className="object-contain" />
-        <button
-          onClick={() => router.push(`/dashboard/historia/${historiaId}`)}
-          className="text-sm text-[#6B8FC2] hover:underline"
-        >
-          ← Historia
-        </button>
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
+      <header className="page-header">
+        <div className="page-header-inner">
+          <Image src="/logo.jpg" alt="Keep Alive" width={36} height={36} style={{ objectFit: 'contain', borderRadius: 12, cursor: 'pointer' }} onClick={() => router.push(`/dashboard/historia/${historiaId}`)} />
+          <button onClick={() => router.push(`/dashboard/historia/${historiaId}`)} style={{ fontSize: 14, color: 'var(--color-azul)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            ← Historia
+          </button>
+        </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-6 py-8 flex flex-col gap-6">
+      <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         <div>
-          <h1 className="text-xl font-medium text-[#141414]">Colaboradores</h1>
-          <p className="text-sm text-[#888888] mt-1">{tituloHistoria}</p>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--color-texto)' }}>Colaboradores</h1>
+          <p style={{ fontSize: 14, color: 'var(--color-gris)', marginTop: 4 }}>{tituloHistoria}</p>
         </div>
 
         {/* Invitar */}
-        <div className="bg-white border border-[#DDDDDD] rounded-xl p-4 flex flex-col gap-3">
-          <h2 className="text-xs font-medium text-[#888888] uppercase tracking-wide">Invitar colaborador</h2>
-          <form onSubmit={handleInvitar} className="flex gap-2">
+        <div style={{ background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <h2 style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-gris)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Invitar colaborador</h2>
+          <form onSubmit={handleInvitar} style={{ display: 'flex', gap: 8 }}>
             <input
               type="email"
               placeholder="Email del colaborador"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="flex-1 h-10 px-3 text-sm border border-[#DDDDDD] rounded-md bg-[#F2F2F2] text-[#141414] placeholder-[#AAAAAA] focus:outline-none focus:border-[#6B8FC2]"
+              style={{ flex: 1, height: 44, padding: '0 14px', fontSize: 14, border: '1.5px solid var(--color-borde)', borderRadius: 12, background: 'var(--color-crema)', color: 'var(--color-texto)', outline: 'none' }}
             />
             <button
               type="submit"
               disabled={loading}
-              className="h-10 px-4 bg-[#141414] text-white text-sm font-medium rounded-md hover:bg-[#333333] transition-colors disabled:opacity-50"
+              style={{ height: 44, padding: '0 16px', background: 'var(--color-terracota)', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 12, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}
             >
               {loading ? '...' : 'Invitar'}
             </button>
           </form>
-          {error && <p className="text-xs text-red-500">{error}</p>}
-          {mensaje && <p className="text-xs text-[#6B8FC2]">{mensaje}</p>}
+          {error && <p style={{ fontSize: 13, color: '#C0522A' }}>{error}</p>}
+          {mensaje && <p style={{ fontSize: 13, color: 'var(--color-salvia)' }}>{mensaje}</p>}
         </div>
 
-        {/* Tópicos disponibles */}
+        {/* Tópicos */}
         {topicos.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <h2 className="text-xs font-medium text-[#888888] uppercase tracking-wide">Tópicos de esta historia</h2>
-            <div className="flex flex-wrap gap-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <h2 style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-gris)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tópicos de esta historia</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {topicos.map((t) => (
-                <span
-                  key={t.id}
-                  className="text-xs px-3 py-1 bg-white border border-[#DDDDDD] rounded-full text-[#4A4A4A]"
-                >
+                <span key={t.id} style={{ fontSize: 12, padding: '4px 12px', background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 20, color: 'var(--color-texto)' }}>
                   {t.nombre_es}
                 </span>
               ))}
@@ -190,49 +183,43 @@ export default function Colaboradores() {
           </div>
         )}
 
-        {/* Lista de colaboradores */}
-        <div className="flex flex-col gap-2">
-          <h2 className="text-xs font-medium text-[#888888] uppercase tracking-wide">
+        {/* Lista */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <h2 style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-gris)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Colaboradores {colaboradores.length > 0 && `(${colaboradores.length})`}
           </h2>
 
           {colaboradores.length === 0 ? (
-            <div className="bg-white border border-[#DDDDDD] rounded-xl p-6 text-center">
-              <p className="text-sm text-[#888888]">Todavía no invitaste a nadie.</p>
-              <p className="text-xs text-[#AAAAAA] mt-1">Invitá personas para que aporten a esta historia.</p>
+            <div style={{ background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 16, padding: 32, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span style={{ fontSize: 32 }}>👥</span>
+              <p style={{ fontSize: 14, color: 'var(--color-texto)', fontWeight: 500 }}>Todavía no invitaste a nadie.</p>
+              <p style={{ fontSize: 13, color: 'var(--color-gris)' }}>Invitá personas para que aporten a esta historia.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {colaboradores.map((c) => (
-                <div
-                  key={c.id}
-                  className="bg-white border border-[#DDDDDD] rounded-xl px-4 py-3 flex items-center gap-3"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#F2F2F2] flex items-center justify-center text-xs font-medium text-[#4A4A4A] flex-shrink-0">
+                <div key={c.id} style={{ background: 'white', border: '1.5px solid var(--color-borde)', borderRadius: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-crema-oscuro)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: 'var(--color-terracota)', flexShrink: 0 }}>
                     {c.email[0].toUpperCase()}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[#141414] truncate">{c.email}</p>
-                    <p className="text-xs text-[#AAAAAA]">
-                      {new Date(c.fecha_invitacion).toLocaleDateString('es-UY', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 14, color: 'var(--color-texto)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</p>
+                    <p style={{ fontSize: 12, color: 'var(--color-gris)' }}>
+                      {new Date(c.fecha_invitacion).toLocaleDateString('es-UY', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${estadoBadge(c.estado)}`}>
+                  <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, flexShrink: 0, fontWeight: 500, ...estadoBadge(c.estado) }}>
                     {estadoLabel(c.estado)}
                   </span>
                   <button
                     onClick={() => handleCopiarLink(c.token)}
-                    className="text-xs text-[#6B8FC2] hover:underline flex-shrink-0"
+                    style={{ fontSize: 12, color: 'var(--color-azul)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
                   >
                     Copiar link
                   </button>
                   <button
                     onClick={() => handleCompartirWhatsApp(c.token, c.email)}
-                    className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-white bg-[#25D366] hover:bg-[#20BD5C] px-2.5 py-1 rounded-full transition-colors"
+                    style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: 'white', background: '#25D366', border: 'none', padding: '5px 10px', borderRadius: 20, cursor: 'pointer' }}
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -241,7 +228,7 @@ export default function Colaboradores() {
                   </button>
                   <button
                     onClick={() => handleEliminar(c.id)}
-                    className="text-[#AAAAAA] hover:text-red-400 transition-colors flex-shrink-0 text-lg leading-none"
+                    style={{ fontSize: 20, color: 'var(--color-gris)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}
                   >
                     ×
                   </button>
