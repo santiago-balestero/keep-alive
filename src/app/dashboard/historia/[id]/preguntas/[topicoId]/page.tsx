@@ -23,8 +23,8 @@ export default function Preguntas() {
   const [topicoNombre, setTopicoNombre] = useState('')
   const [indice, setIndice] = useState(0)
   const [respuesta, setRespuesta] = useState('')
-  const [respuestasGuardadas, setRespuestasGuardadas] = useState<Record<number, string>>({})
-  const [imagenesGuardadas, setImagenesGuardadas] = useState<Record<number, string[]>>({})
+  const [respuestasGuardadas, setRespuestasGuardadas] = useState<Record<number | string, string>>({})
+  const [imagenesGuardadas, setImagenesGuardadas] = useState<Record<number | string, string[]>>({})
   const [imagenesPreview, setImagenesPreview] = useState<{ url: string; file?: File }[]>([])
   const [loading, setLoading] = useState(false)
   const [guardado, setGuardado] = useState(false)
@@ -78,7 +78,7 @@ export default function Preguntas() {
           .eq('id_historia', historiaId)
           .eq('id_usuario', user.id)
         if (r) {
-          const mapaTexto: Record<number, string> = {}
+          const mapaTexto: Record<number | string, string> = {}
           r.forEach((resp) => { mapaTexto[resp.id_pregunta] = resp.contenido })
           setRespuestasGuardadas(mapaTexto)
         }
@@ -90,7 +90,7 @@ export default function Preguntas() {
           .eq('id_usuario', user.id)
           .order('orden')
         if (imgs) {
-          const mapaImagenes: Record<number, string[]> = {}
+          const mapaImagenes: Record<number | string, string[]> = {}
           imgs.forEach((img) => {
             if (!mapaImagenes[img.id_pregunta]) mapaImagenes[img.id_pregunta] = []
             mapaImagenes[img.id_pregunta].push(img.imagen_url)
