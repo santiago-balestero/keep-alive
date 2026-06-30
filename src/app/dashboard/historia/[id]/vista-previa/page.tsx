@@ -476,8 +476,8 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
     const n = Math.min(urls.length, 6)
     if (n === 0) {
       return (
-        <div style={{ width: '100%', height: '100%', background: '#F7F2EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 56, height: 2, background: '#E0D4C4', borderRadius: 2 }} />
+        <div style={{ width: '100%', height: '100%', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 56, height: 2, background: 'var(--color-borde)', borderRadius: 2 }} />
         </div>
       )
     }
@@ -548,8 +548,8 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
   }
 
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: '#141414', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Cargando...</p>
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: 'var(--color-gris)', fontSize: 14 }}>Cargando...</p>
     </main>
   )
 
@@ -560,12 +560,12 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
   const scaledW = Math.round((PAGE_W * 2 + 8) * scale)
 
   return (
-    <main style={{ minHeight: '100vh', background: '#1A1A1A', display: 'flex', flexDirection: 'column' }}>
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 10,
-        background: '#141414', borderBottom: '1px solid rgba(255,255,255,0.08)',
+        background: 'var(--color-blanco)', borderBottom: '1px solid var(--color-borde)',
         height: 56, display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', padding: '0 16px', flexShrink: 0,
       }}>
@@ -577,7 +577,7 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
           />
           <button
             onClick={() => router.push(`/dashboard/historia/${historiaId}`)}
-            style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', background: 'none', border: 'none', cursor: 'pointer' }}
+            style={{ fontSize: 13, color: 'var(--color-azul)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             ← Historia
           </button>
@@ -585,14 +585,14 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {capitulos.length > 0 && (
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: 3, gap: 2 }}>
+            <div style={{ display: 'flex', background: 'var(--color-crema-oscuro)', borderRadius: 10, padding: 3, gap: 2 }}>
               <button
                 onClick={() => setModoNarrativa(false)}
                 style={{
                   padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 500,
                   border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-                  background: !modoNarrativa ? 'white' : 'transparent',
-                  color: !modoNarrativa ? '#141414' : 'rgba(255,255,255,0.45)',
+                  background: !modoNarrativa ? 'var(--color-blanco)' : 'transparent',
+                  color: !modoNarrativa ? 'var(--color-texto)' : 'var(--color-gris)',
                 }}
               >
                 Original
@@ -602,8 +602,8 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
                 style={{
                   padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 500,
                   border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-                  background: modoNarrativa ? 'white' : 'transparent',
-                  color: modoNarrativa ? '#141414' : 'rgba(255,255,255,0.45)',
+                  background: modoNarrativa ? 'var(--color-blanco)' : 'transparent',
+                  color: modoNarrativa ? 'var(--color-texto)' : 'var(--color-gris)',
                 }}
               >
                 {generando ? 'Generando...' : '✨ Narrativa'}
@@ -615,7 +615,7 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
             onClick={handleExportarPDF}
             disabled={exportando}
             style={{
-              height: 34, padding: '0 14px', background: 'white', color: '#141414',
+              height: 34, padding: '0 14px', background: 'var(--color-terracota)', color: 'white',
               fontSize: 12, fontWeight: 500, border: 'none', borderRadius: 9,
               cursor: exportando ? 'default' : 'pointer', opacity: exportando ? 0.6 : 1,
               display: 'flex', alignItems: 'center', gap: 6,
@@ -657,7 +657,7 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
             transformOrigin: 'top left',
             width: PAGE_W * 2 + 8,
             height: PAGE_H,
-            filter: 'drop-shadow(0 40px 80px rgba(0,0,0,0.8))',
+            filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.18))',
           }}>
             <HTMLFlipBook
               width={PAGE_W}
@@ -709,7 +709,7 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
                 const hasPhotos = allUrls.length > 0
                 return (
                   <BookPage key={cap.topico.id}>
-                    <div style={{ width: '100%', height: '100%', background: 'white', display: 'flex' }}>
+                    <div style={{ width: '100%', height: '100%', background: 'var(--color-crema)', display: 'flex' }}>
 
                       {/* Mitad izquierda: fotos */}
                       {hasPhotos && (
@@ -724,14 +724,14 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
                         padding: hasPhotos ? '22px 22px 16px 18px' : '22px 32px 16px',
                         boxSizing: 'border-box',
                         display: 'flex', flexDirection: 'column',
-                        borderLeft: hasPhotos ? '1px solid #EEEEEE' : 'none',
+                        borderLeft: hasPhotos ? '1px solid var(--color-borde)' : 'none',
                       }}>
                         {/* Título capítulo */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexShrink: 0 }}>
-                          <div style={{ width: 3, height: 13, background: '#5B84B1', borderRadius: 2, flexShrink: 0 }} />
-                          <h2 style={{ fontSize: 10, fontWeight: 500, color: '#141414', margin: 0 }}>{cap.topico.nombre_es}</h2>
+                          <div style={{ width: 3, height: 13, background: 'var(--color-azul)', borderRadius: 2, flexShrink: 0 }} />
+                          <h2 style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-texto)', margin: 0 }}>{cap.topico.nombre_es}</h2>
                           {generandoCapitulo === idx && modoNarrativa && (
-                            <span style={{ marginLeft: 'auto', fontSize: 8, color: '#5B84B1' }}>Generando...</span>
+                            <span style={{ marginLeft: 'auto', fontSize: 8, color: 'var(--color-azul)' }}>Generando...</span>
                           )}
                         </div>
 
@@ -740,14 +740,14 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
                           {modoNarrativa ? (
                             cap.narrativa ? (
                               <p style={{
-                                fontSize: 8.5, lineHeight: 1.8, color: '#1A1A1A',
+                                fontSize: 8.5, lineHeight: 1.8, color: 'var(--color-texto)',
                                 fontFamily: 'Georgia, serif', margin: 0, whiteSpace: 'pre-wrap',
                               }}>
                                 {cap.narrativa}
                               </p>
                             ) : (
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                                <p style={{ fontSize: 10, color: '#AAAAAA' }}>Generando narrativa...</p>
+                                <p style={{ fontSize: 10, color: 'var(--color-gris)' }}>Generando narrativa...</p>
                               </div>
                             )
                           ) : (
@@ -759,16 +759,16 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
                                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                                         <div style={{
                                           width: 13, height: 13, borderRadius: '50%',
-                                          background: '#D08B70', display: 'flex',
+                                          background: 'var(--color-terracota)', display: 'flex',
                                           alignItems: 'center', justifyContent: 'center',
                                           fontSize: 6, fontWeight: 700, color: 'white', flexShrink: 0,
                                         }}>
                                           {resp.autor[0].toUpperCase()}
                                         </div>
-                                        <span style={{ fontSize: 8, fontWeight: 500, color: '#888' }}>{resp.autor}</span>
+                                        <span style={{ fontSize: 8, fontWeight: 500, color: 'var(--color-gris)' }}>{resp.autor}</span>
                                       </div>
                                     )}
-                                    <p style={{ fontSize: 8.5, lineHeight: 1.75, color: '#1A1A1A', margin: 0 }}>
+                                    <p style={{ fontSize: 8.5, lineHeight: 1.75, color: 'var(--color-texto)', margin: 0 }}>
                                       {resp.contenido}
                                     </p>
                                   </div>
@@ -782,10 +782,10 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
                         <div style={{
                           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                           paddingTop: 8, marginTop: 8,
-                          borderTop: '1px solid #F0F0F0', flexShrink: 0,
+                          borderTop: '1px solid var(--color-borde)', flexShrink: 0,
                         }}>
-                          <span style={{ fontSize: 7, color: '#CCCCCC' }}>{idx + 1}</span>
-                          <span style={{ fontSize: 8, fontStyle: 'italic', color: '#BBBBBB' }}>
+                          <span style={{ fontSize: 7, color: 'var(--color-gris)', opacity: 0.5 }}>{idx + 1}</span>
+                          <span style={{ fontSize: 8, fontStyle: 'italic', color: 'var(--color-gris)' }}>
                             {historia.nombre_protagonista || ''}
                           </span>
                         </div>
@@ -812,7 +812,7 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
           </div>
         </div>
 
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', textAlign: 'center' }}>
+        <p style={{ fontSize: 11, color: 'var(--color-gris)', opacity: 0.4, textAlign: 'center' }}>
           Hacé clic en los bordes o arrastrá para pasar la página
         </p>
       </div>
