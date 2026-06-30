@@ -120,8 +120,8 @@ export default function NuevaHistoria() {
           </div>
 
           {error && (
-            <div style={{ background: '#FDF0ED', border: '1px solid #F5C4B0', borderRadius: 12, padding: '10px 16px' }}>
-              <p style={{ fontSize: 13, color: '#C0522A' }}>{error}</p>
+            <div style={{ background: 'var(--color-error-bg)', border: '1px solid var(--color-error-borde)', borderRadius: 12, padding: '10px 16px' }}>
+              <p style={{ fontSize: 13, color: 'var(--color-error)' }}>{error}</p>
             </div>
           )}
 

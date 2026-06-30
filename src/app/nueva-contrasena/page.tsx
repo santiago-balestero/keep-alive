@@ -69,7 +69,7 @@ export default function NuevaContrasena() {
             style={{ width: '100%', height: 44, padding: '0 16px', fontSize: 14, border: '1.5px solid var(--color-borde)', borderRadius: 12, background: 'var(--color-crema)', color: 'var(--color-texto)', outline: 'none' }}
           />
 
-          {error && <p style={{ fontSize: 13, color: '#C0522A', textAlign: 'center' }}>{error}</p>}
+          {error && <p style={{ fontSize: 13, color: 'var(--color-error)', textAlign: 'center' }}>{error}</p>}
 
           <button
             type="submit"

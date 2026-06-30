@@ -56,16 +56,13 @@ export default function ColaborarPage() {
         await supabase.from('colaboradores').update({ estado: 'aceptado' }).eq('id', colab.id)
       }
 
-      // Verificar si ya tiene nombre guardado en localStorage
       const nombreGuardado = localStorage.getItem(`keepalive_nombre_${token}`)
       const userIdGuardado = localStorage.getItem(`keepalive_userid_${token}`)
 
       if (nombreGuardado && userIdGuardado) {
-        // Ya vino antes, restaurar su sesion
         setNombreColaborador(nombreGuardado)
         setUserId(userIdGuardado)
 
-        // Intentar recuperar la sesion anonima existente
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
           const { data: anonData } = await supabase.auth.signInAnonymously()
@@ -75,7 +72,6 @@ export default function ColaborarPage() {
           }
         }
       } else {
-        // Primera vez, crear sesion anonima
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           setUserId(user.id)
@@ -95,7 +91,6 @@ export default function ColaborarPage() {
         .from('historia_topicos').select('topicos(id, nombre_es)').eq('id_historia', colab.id_historia)
       if (ht) setTopicos(ht.map((row: any) => row.topicos).filter(Boolean))
 
-      // Si ya tiene nombre, ir directo a bienvenida, sino pedir nombre
       if (nombreGuardado) {
         setEstado('bienvenida')
       } else {
@@ -251,27 +246,27 @@ export default function ColaborarPage() {
   const textoPregunta = historia?.tipo === 'autobiografia' ? preguntaActual?.texto_es : preguntaActual?.texto_es_tercera
 
   if (estado === 'cargando') return (
-    <main className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
-      <p className="text-sm text-[#888888]">Cargando invitación...</p>
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ fontSize: 14, color: 'var(--color-gris)' }}>Cargando invitación...</p>
     </main>
   )
 
   if (estado === 'error') return (
-    <main className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-6">
-      <div className="text-center flex flex-col gap-3">
-        <span className="text-4xl">❌</span>
-        <p className="text-base font-medium text-[#141414]">Link inválido</p>
-        <p className="text-sm text-[#888888]">{errorMsg}</p>
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <span style={{ fontSize: 40 }}>❌</span>
+        <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--color-texto)' }}>Link inválido</p>
+        <p style={{ fontSize: 14, color: 'var(--color-gris)' }}>{errorMsg}</p>
       </div>
     </main>
   )
 
   if (estado === 'finalizado') return (
-    <main className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-6">
-      <div className="text-center flex flex-col gap-4 max-w-sm">
-        <span className="text-5xl">🙌</span>
-        <h1 className="text-xl font-semibold text-[#141414]">¡Gracias por contribuir!</h1>
-        <p className="text-sm text-[#888888]">
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 360 }}>
+        <span style={{ fontSize: 48 }}>🙌</span>
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-texto)' }}>¡Gracias por contribuir!</h1>
+        <p style={{ fontSize: 14, color: 'var(--color-gris)', lineHeight: 1.6 }}>
           Tus respuestas van a formar parte de la historia de {historia?.nombre_protagonista || 'esta persona'}. Es un regalo invaluable.
         </p>
       </div>
@@ -279,16 +274,16 @@ export default function ColaborarPage() {
   )
 
   if (estado === 'pidiendo-nombre') return (
-    <main className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-6">
-      <div className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
         <Image src="/logo.jpg" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
-        <div className="flex flex-col gap-2">
-          <h1 className="text-xl font-semibold text-[#141414]">Hola, ¿cómo te llamás?</h1>
-          <p className="text-sm text-[#888888]">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-texto)' }}>Hola, ¿cómo te llamás?</h1>
+          <p style={{ fontSize: 14, color: 'var(--color-gris)' }}>
             Tu nombre va a aparecer junto a tus respuestas en la historia.
           </p>
         </div>
-        <div className="w-full flex flex-col gap-3">
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input
             type="text"
             placeholder="Tu nombre"
@@ -301,8 +296,12 @@ export default function ColaborarPage() {
                 setEstado('bienvenida')
               }
             }}
-            className="w-full h-12 px-4 text-sm border border-[#EEEEEE] rounded-xl bg-[#F8F8F8] text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] focus:bg-white text-center text-base"
             autoFocus
+            style={{
+              width: '100%', height: 48, padding: '0 16px', fontSize: 14,
+              border: '1.5px solid var(--color-borde)', borderRadius: 12,
+              background: 'white', color: 'var(--color-texto)', outline: 'none', textAlign: 'center',
+            }}
           />
           <button
             onClick={() => {
@@ -312,7 +311,12 @@ export default function ColaborarPage() {
               setEstado('bienvenida')
             }}
             disabled={!nombreInput.trim()}
-            className="w-full h-12 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#2A2A2A] active:scale-[0.98] transition-all disabled:opacity-40"
+            style={{
+              width: '100%', height: 48, background: 'var(--color-terracota)',
+              color: 'white', fontSize: 14, fontWeight: 600,
+              border: 'none', borderRadius: 12, cursor: 'pointer',
+              opacity: nombreInput.trim() ? 1 : 0.4,
+            }}
           >
             Continuar →
           </button>
@@ -322,20 +326,24 @@ export default function ColaborarPage() {
   )
 
   if (estado === 'bienvenida') return (
-    <main className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-6">
-      <div className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
         <Image src="/logo.jpg" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
-        <div className="flex flex-col gap-2">
-          <h1 className="text-xl font-semibold text-[#141414]">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-texto)' }}>
             Hola, {nombreColaborador}! 👋
           </h1>
-          <p className="text-sm text-[#888888]">Te invitaron a contribuir con recuerdos para la historia:</p>
-          <p className="text-base font-medium text-[#141414] mt-1">"{historia?.titulo}"</p>
-          {historia?.descripcion && <p className="text-xs text-[#AAAAAA]">{historia.descripcion}</p>}
+          <p style={{ fontSize: 14, color: 'var(--color-gris)' }}>Te invitaron a contribuir con recuerdos para la historia:</p>
+          <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--color-texto)', marginTop: 4 }}>"{historia?.titulo}"</p>
+          {historia?.descripcion && <p style={{ fontSize: 12, color: 'var(--color-gris)' }}>{historia.descripcion}</p>}
         </div>
         <button
           onClick={() => setEstado('eligiendo-topico')}
-          className="w-full h-12 bg-[#141414] text-white text-sm font-medium rounded-xl hover:bg-[#2A2A2A] active:scale-[0.98] transition-all"
+          style={{
+            width: '100%', height: 48, background: 'var(--color-terracota)',
+            color: 'white', fontSize: 14, fontWeight: 600,
+            border: 'none', borderRadius: 12, cursor: 'pointer',
+          }}
         >
           Empezar a contribuir →
         </button>
@@ -344,28 +352,38 @@ export default function ColaborarPage() {
   )
 
   if (estado === 'eligiendo-topico') return (
-    <main className="min-h-screen bg-[#FAFAFA]">
-      <header className="bg-white border-b border-[#F0F0F0] px-6 h-16 flex items-center">
-        <Image src="/logo.jpg" alt="Keep Alive" width={36} height={36} className="object-contain rounded-xl" />
-      </header>
-      <div className="max-w-lg mx-auto px-6 py-8 flex flex-col gap-6">
-        <div>
-          <h1 className="text-xl font-semibold text-[#141414]">¿Sobre qué querés contar?</h1>
-          <p className="text-sm text-[#888888] mt-1">Elegí un tópico para responder preguntas</p>
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
+      <header className="page-header">
+        <div className="page-header-inner">
+          <Image src="/logo.jpg" alt="Keep Alive" width={36} height={36} className="object-contain rounded-xl" />
         </div>
-        <div className="flex flex-col gap-2">
+      </header>
+      <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-texto)' }}>¿Sobre qué querés contar?</h1>
+          <p style={{ fontSize: 14, color: 'var(--color-gris)', marginTop: 4 }}>Elegí un tópico para responder preguntas</p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {topicos.map((t) => (
             <button
               key={t.id}
               onClick={() => handleElegirTopico(t)}
-              className="bg-white border border-[#EEEEEE] rounded-2xl px-4 py-4 flex items-center justify-between hover:border-[#6B8FC2] hover:shadow-sm active:scale-[0.99] transition-all text-left"
+              style={{
+                background: 'white', border: '1.5px solid var(--color-borde)',
+                borderRadius: 16, padding: '16px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                cursor: 'pointer', textAlign: 'left', width: '100%',
+              }}
             >
-              <span className="text-sm font-medium text-[#141414]">{t.nombre_es}</span>
-              <span className="text-[#6B8FC2]">›</span>
+              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-texto)' }}>{t.nombre_es}</span>
+              <span style={{ color: 'var(--color-azul)', fontSize: 18 }}>›</span>
             </button>
           ))}
         </div>
-        <button onClick={() => setEstado('finalizado')} className="text-sm text-[#AAAAAA] hover:text-[#888888] text-center">
+        <button
+          onClick={() => setEstado('finalizado')}
+          style={{ fontSize: 13, color: 'var(--color-gris)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center' }}
+        >
           Ya terminé, cerrar
         </button>
       </div>
@@ -373,23 +391,34 @@ export default function ColaborarPage() {
   )
 
   if (estado === 'respondiendo') return (
-    <main className="min-h-screen bg-[#FAFAFA]">
-      <header className="bg-white border-b border-[#F0F0F0] px-6 h-16 flex items-center justify-between">
-        <Image src="/logo.jpg" alt="Keep Alive" width={36} height={36} className="object-contain rounded-xl" />
-        <button onClick={() => setEstado('eligiendo-topico')} className="text-sm text-[#6B8FC2] hover:underline">← Tópicos</button>
+    <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
+      <header className="page-header">
+        <div className="page-header-inner">
+          <Image src="/logo.jpg" alt="Keep Alive" width={36} height={36} className="object-contain rounded-xl" />
+          <button
+            onClick={() => setEstado('eligiendo-topico')}
+            style={{ fontSize: 14, color: 'var(--color-azul)', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            ← Tópicos
+          </button>
+        </div>
       </header>
-      <div className="max-w-lg mx-auto px-6 py-8 flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between text-xs text-[#888888]">
-            <span className="font-medium">{topicoActivo?.nombre_es}</span>
+      <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+        {/* Progreso */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--color-gris)' }}>
+            <span style={{ fontWeight: 500 }}>{topicoActivo?.nombre_es}</span>
             <span>{indice + 1} / {preguntas.length}</span>
           </div>
-          <div className="h-1.5 bg-[#EEEEEE] rounded-full overflow-hidden">
-            <div className="h-full bg-[#6B8FC2] rounded-full transition-all duration-500" style={{ width: `${((indice + 1) / preguntas.length) * 100}%` }} />
+          <div style={{ height: 6, background: 'var(--color-crema-oscuro)', borderRadius: 6, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: 'var(--color-azul)', borderRadius: 6, width: `${((indice + 1) / preguntas.length) * 100}%`, transition: 'width 0.5s' }} />
           </div>
         </div>
-        <div className="bg-[#E8EFF8] rounded-2xl px-4 py-3 border-l-4 border-[#6B8FC2]">
-          <p className="text-xs text-[#6B8FC2] leading-relaxed">
+
+        {/* Tip */}
+        <div style={{ background: '#FBF4EF', borderRadius: 16, padding: '12px 16px', borderLeft: '4px solid var(--color-terracota)' }}>
+          <p style={{ fontSize: 13, color: 'var(--color-terracota)', lineHeight: 1.6 }}>
             {(() => {
               const consejos: Record<string, string[]> = {
                 'Raíces e infancia': ['Pensá en olores, sonidos o lugares específicos de tu infancia.', 'Nombrá a las personas por su nombre, hacé la historia más personal.', '¿Había alguna rutina o tradición familiar que recuerdes con cariño?'],
@@ -406,70 +435,120 @@ export default function ColaborarPage() {
             })()}
           </p>
         </div>
-        <div className="bg-white border-2 border-[#141414] rounded-2xl p-5">
-          <p className="text-sm text-[#141414] leading-relaxed">{textoPregunta}</p>
+
+        {/* Pregunta */}
+        <div style={{ background: 'white', border: '2px solid var(--color-texto)', borderRadius: 16, padding: 20 }}>
+          <p style={{ fontSize: 14, color: 'var(--color-texto)', lineHeight: 1.6 }}>{textoPregunta}</p>
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="relative">
+
+        {/* Respuesta */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ position: 'relative' }}>
             <textarea
               value={respuesta}
               onChange={(e) => { setRespuesta(e.target.value); setGuardado(false) }}
               placeholder="Escribí tu respuesta acá o usá el micrófono..."
               rows={5}
-              className="w-full px-4 py-3 text-sm border-2 border-[#EEEEEE] rounded-2xl bg-white text-[#141414] placeholder-[#BBBBBB] focus:outline-none focus:border-[#6B8FC2] resize-none leading-relaxed pr-14"
+              style={{
+                width: '100%', padding: '12px 56px 12px 16px', fontSize: 14,
+                border: '2px solid var(--color-borde)', borderRadius: 16,
+                background: 'white', color: 'var(--color-texto)', outline: 'none',
+                resize: 'none', lineHeight: 1.6,
+              }}
             />
             <button
               type="button"
               onClick={escuchando ? detenerEscucha : iniciarEscucha}
-              className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-                escuchando
-                  ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                  : 'bg-[#F0F0F0] hover:bg-[#E0E0E0]'
-              }`}
+              style={{
+                position: 'absolute', bottom: 12, right: 12,
+                width: 36, height: 36, borderRadius: '50%', border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: escuchando ? '#ef4444' : 'var(--color-crema-oscuro)',
+                cursor: 'pointer',
+              }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={escuchando ? 'white' : '#888888'} strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={escuchando ? 'white' : 'var(--color-gris)'} strokeWidth="2">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
               </svg>
             </button>
           </div>
           {escuchando && (
-            <p className="text-xs text-red-500 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            <p style={{ fontSize: 12, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
               Escuchando... hablá ahora
             </p>
           )}
           {!soportaVoz && (
-            <p className="text-xs text-[#AAAAAA]">Tu navegador no soporta reconocimiento de voz.</p>
+            <p style={{ fontSize: 12, color: 'var(--color-gris)' }}>Tu navegador no soporta reconocimiento de voz.</p>
           )}
           {guardado && (
-            <p className="text-xs text-[#6B8FC2] flex items-center gap-1">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#6B8FC2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <p style={{ fontSize: 12, color: 'var(--color-azul)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
               Guardado
             </p>
           )}
         </div>
-        <div className="flex flex-col gap-3">
-          <p className="text-xs font-medium text-[#888888] uppercase tracking-widest">Foto (opcional)</p>
+
+        {/* Foto */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-gris)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Foto (opcional)</p>
           {imagenPreview ? (
-            <div className="relative rounded-2xl overflow-hidden border border-[#EEEEEE]">
-              <img src={imagenPreview} alt="Preview" className="w-full object-cover max-h-64" />
-              <button onClick={handleEliminarImagen} className="absolute top-2 right-2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center text-lg leading-none">×</button>
+            <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--color-borde)' }}>
+              <img src={imagenPreview} alt="Preview" style={{ width: '100%', objectFit: 'cover', maxHeight: 256 }} />
+              <button
+                onClick={handleEliminarImagen}
+                style={{
+                  position: 'absolute', top: 8, right: 8,
+                  width: 32, height: 32, background: 'rgba(0,0,0,0.5)',
+                  color: 'white', borderRadius: '50%', border: 'none',
+                  cursor: 'pointer', fontSize: 18, lineHeight: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >×</button>
             </div>
           ) : (
-            <button onClick={() => fileInputRef.current?.click()} className="w-full h-24 border-2 border-dashed border-[#DDDDDD] rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-[#6B8FC2] transition-colors">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#AAAAAA" strokeWidth="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-              <span className="text-xs text-[#AAAAAA]">Subir foto</span>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: '100%', height: 96, border: '2px dashed var(--color-borde)',
+                borderRadius: 16, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 8,
+                background: 'white', cursor: 'pointer',
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-gris)" strokeWidth="1.5">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+              </svg>
+              <span style={{ fontSize: 12, color: 'var(--color-gris)' }}>Subir foto</span>
             </button>
           )}
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImagenChange} className="hidden" />
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImagenChange} style={{ display: 'none' }} />
         </div>
-        <div className="flex gap-3">
-          <button onClick={handleSaltar} className="flex-1 h-12 border-2 border-[#EEEEEE] rounded-2xl text-sm text-[#888888] bg-white hover:bg-[#F8F8F8] active:scale-[0.98]">Saltar</button>
+
+        {/* Acciones */}
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            onClick={handleSaltar}
+            style={{
+              flex: 1, height: 48, border: '1.5px solid var(--color-borde)',
+              borderRadius: 16, fontSize: 14, color: 'var(--color-gris)',
+              background: 'white', cursor: 'pointer',
+            }}
+          >
+            Saltar
+          </button>
           <button
             onClick={handleGuardar}
             disabled={loading || (!respuesta.trim() && !imagenFile && !imagenPreview)}
-            className="flex-[2] h-12 bg-[#141414] text-white text-sm font-medium rounded-2xl hover:bg-[#2A2A2A] active:scale-[0.98] disabled:opacity-40"
+            style={{
+              flex: 2, height: 48, background: 'var(--color-texto)',
+              color: 'white', fontSize: 14, fontWeight: 600,
+              border: 'none', borderRadius: 16, cursor: 'pointer',
+              opacity: (loading || (!respuesta.trim() && !imagenFile && !imagenPreview)) ? 0.4 : 1,
+            }}
           >
             {subiendoImagen ? 'Subiendo foto...' : loading ? 'Guardando...' : indice < preguntas.length - 1 ? 'Guardar y seguir →' : 'Finalizar tópico →'}
           </button>

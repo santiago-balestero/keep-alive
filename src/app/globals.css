@@ -10,6 +10,10 @@
   --color-borde: #E5DDD4;
   --color-blanco: #FFFFFF;
   --color-crema-oscuro: #EDE6DC;
+  --color-error: #C0522A;
+  --color-error-bg: #FDF0ED;
+  --color-error-borde: #F5C4B0;
+  --color-badge-verde-bg: #EEF4EC;
 }
 
 * {

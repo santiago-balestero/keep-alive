@@ -113,9 +113,9 @@ export default function Colaboradores() {
 
   const estadoBadge = (estado: string) => {
     switch (estado) {
-      case 'aceptado': return { background: '#EEF4EC', color: 'var(--color-salvia)' }
-      case 'rechazado': return { background: '#F5F0EB', color: 'var(--color-gris)' }
-      default: return { background: '#F5F0EB', color: 'var(--color-gris)' }
+      case 'aceptado': return { background: 'var(--color-badge-verde-bg)', color: 'var(--color-salvia)' }
+      case 'rechazado': return { background: 'var(--color-crema-oscuro)', color: 'var(--color-gris)' }
+      default: return { background: 'var(--color-crema-oscuro)', color: 'var(--color-gris)' }
     }
   }
 
@@ -165,7 +165,7 @@ export default function Colaboradores() {
               {loading ? '...' : 'Invitar'}
             </button>
           </form>
-          {error && <p style={{ fontSize: 13, color: '#C0522A' }}>{error}</p>}
+          {error && <p style={{ fontSize: 13, color: 'var(--color-error)' }}>{error}</p>}
           {mensaje && <p style={{ fontSize: 13, color: 'var(--color-salvia)' }}>{mensaje}</p>}
         </div>
 

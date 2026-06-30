@@ -627,11 +627,11 @@ return data.texto || ''
           {capituloActivo >= 0 && capActual && (
             <div className="bg-white rounded-2xl overflow-hidden border border-white/10">
               {/* Título del capítulo */}
-              <div className="px-8 py-5 border-b border-[#EEEEEE] flex items-center gap-3">
-                <div className="w-1 h-6 bg-[#6B8FC2] rounded-full" />
+              <div className="px-8 py-5 border-b border-[var(--color-borde)] flex items-center gap-3">
+                <div className="w-1 h-6 bg-[var(--color-azul)] rounded-full" />
                 <h2 className="text-lg font-medium text-[#141414]">{capActual.topico.nombre_es}</h2>
                 {modoNarrativa && generandoCapitulo === capituloActivo && (
-                  <span className="ml-auto text-xs text-[#6B8FC2] flex items-center gap-1.5">
+                  <span className="ml-auto text-xs text-[var(--color-azul)] flex items-center gap-1.5">
                     <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".3"/>
                       <path d="M21 12a9 9 0 00-9-9"/>
@@ -692,7 +692,7 @@ return data.texto || ''
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-12 gap-3">
-                        <svg className="animate-spin text-[#6B8FC2]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg className="animate-spin text-[var(--color-azul)]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".3"/>
                           <path d="M21 12a9 9 0 00-9-9"/>
                         </svg>
@@ -703,7 +703,7 @@ return data.texto || ''
                     <div className="flex flex-col gap-6">
                       {capActual.preguntas.map((p) => (
                         <div key={p.id} className="flex flex-col gap-2">
-                          <p className="text-xs text-[#6B8FC2] italic">
+                          <p className="text-xs text-[var(--color-azul)] italic">
                             {historia.tipo === 'autobiografia' ? p.texto_es : p.texto_es_tercera}
                           </p>
                           <p className="text-sm text-[#141414] leading-relaxed">
@@ -722,7 +722,7 @@ return data.texto || ''
 
                 {/* Fotos — solo en modo original */}
                 {!modoNarrativa && capActual.preguntas.some((p) => capActual.imagenes[p.id]?.length > 0) && (
-                  <div className="w-full sm:w-64 p-4 grid grid-cols-2 gap-2 content-start border-t sm:border-t-0 sm:border-l border-[#EEEEEE]">
+                  <div className="w-full sm:w-64 p-4 grid grid-cols-2 gap-2 content-start border-t sm:border-t-0 sm:border-l border-[var(--color-borde)]">
                     {capActual.preguntas
                       .filter((p) => capActual.imagenes[p.id]?.length > 0)
                       .flatMap((p) => capActual.imagenes[p.id])

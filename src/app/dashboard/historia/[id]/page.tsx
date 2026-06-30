@@ -192,7 +192,7 @@ export default function DetalleHistoria() {
                       <span style={{ fontSize: 14, color: 'var(--color-texto)' }}>{topico.nombre_es}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {completo && (
-                          <span style={{ fontSize: 11, padding: '2px 8px', background: '#EEF4EC', color: 'var(--color-salvia)', borderRadius: 20, fontWeight: 500 }}>Completo</span>
+                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'var(--color-badge-verde-bg)', color: 'var(--color-salvia)', borderRadius: 20, fontWeight: 500 }}>Completo</span>
                         )}
                         <span style={{ color: 'var(--color-azul)', fontSize: 18 }}>›</span>
                       </div>
@@ -234,7 +234,7 @@ export default function DetalleHistoria() {
           )}
           <button
             onClick={() => setConfirmarEliminar(true)}
-            style={{ width: '100%', height: 44, border: '1.5px solid #F5C4B0', borderRadius: 12, fontSize: 14, color: '#C0522A', background: 'white', cursor: 'pointer' }}
+            style={{ width: '100%', height: 44, border: '1.5px solid var(--color-error-borde)', borderRadius: 12, fontSize: 14, color: 'var(--color-error)', background: 'white', cursor: 'pointer' }}
           >
             Eliminar historia
           </button>
@@ -260,7 +260,7 @@ export default function DetalleHistoria() {
                 <button
                   onClick={handleEliminar}
                   disabled={eliminando}
-                  style={{ flex: 1, height: 44, background: '#C0522A', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 12, cursor: 'pointer', opacity: eliminando ? 0.6 : 1 }}
+                  style={{ flex: 1, height: 44, background: 'var(--color-error)', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 12, cursor: 'pointer', opacity: eliminando ? 0.6 : 1 }}
                 >
                   {eliminando ? 'Eliminando...' : 'Eliminar'}
                 </button>

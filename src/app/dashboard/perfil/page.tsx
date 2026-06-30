@@ -143,7 +143,7 @@ export default function Perfil() {
               required
               style={{ width: '100%', height: 44, padding: '0 14px', fontSize: 14, border: '1.5px solid var(--color-borde)', borderRadius: 12, background: 'var(--color-crema)', color: 'var(--color-texto)', outline: 'none' }}
             />
-            {errorNombre && <p style={{ fontSize: 12, color: '#C0522A' }}>{errorNombre}</p>}
+            {errorNombre && <p style={{ fontSize: 12, color: 'var(--color-error)' }}>{errorNombre}</p>}
             {mensajeNombre && <p style={{ fontSize: 12, color: 'var(--color-salvia)' }}>✓ {mensajeNombre}</p>}
             <button
               type="submit"
@@ -175,7 +175,7 @@ export default function Perfil() {
               required
               style={{ width: '100%', height: 44, padding: '0 14px', fontSize: 14, border: '1.5px solid var(--color-borde)', borderRadius: 12, background: 'var(--color-crema)', color: 'var(--color-texto)', outline: 'none' }}
             />
-            {errorPassword && <p style={{ fontSize: 12, color: '#C0522A' }}>{errorPassword}</p>}
+            {errorPassword && <p style={{ fontSize: 12, color: 'var(--color-error)' }}>{errorPassword}</p>}
             {mensajePassword && <p style={{ fontSize: 12, color: 'var(--color-salvia)' }}>✓ {mensajePassword}</p>}
             <button
               type="submit"

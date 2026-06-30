@@ -149,7 +149,7 @@ export default function Dashboard() {
                     <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-texto)', lineHeight: 1.3 }}>{h.titulo}</h3>
                     <span style={{
                       fontSize: 11, padding: '4px 10px', borderRadius: 20, flexShrink: 0, fontWeight: 500,
-                      background: h.estado === 'completada' ? '#EEF4EC' : '#F5F0EB',
+                      background: h.estado === 'completada' ? 'var(--color-badge-verde-bg)' : 'var(--color-crema-oscuro)',
                       color: h.estado === 'completada' ? 'var(--color-salvia)' : 'var(--color-gris)'
                     }}>
                       {h.estado === 'completada' ? 'Completa' : 'En progreso'}
