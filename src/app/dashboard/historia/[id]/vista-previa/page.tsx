@@ -1,10 +1,25 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, forwardRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
-import Header from '@/components/Header'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const HTMLFlipBook = dynamic(
+  () => import('react-pageflip').then((m) => m.default as any),
+  { ssr: false }
+) as any
+
+const BookPage = forwardRef<HTMLDivElement, { children?: React.ReactNode }>(
+  ({ children }, ref) => (
+    <div ref={ref} style={{ width: '100%', height: '100%', overflow: 'hidden', userSelect: 'none' }}>
+      {children}
+    </div>
+  )
+)
+BookPage.displayName = 'BookPage'
 
 type Historia = {
   titulo: string
@@ -37,16 +52,19 @@ type Capitulo = {
   narrativa?: string
 }
 
+const PAGE_W = 520
+const PAGE_H = 368
+
 export default function VistaPrevia() {
   const [historia, setHistoria] = useState<Historia | null>(null)
   const [capitulos, setCapitulos] = useState<Capitulo[]>([])
-  const [capituloActivo, setCapituloActivo] = useState(-1) // -1 = portada
   const [loading, setLoading] = useState(true)
   const [exportando, setExportando] = useState(false)
   const [generando, setGenerando] = useState(false)
   const [generandoCapitulo, setGenerandoCapitulo] = useState<number | null>(null)
   const [modoNarrativa, setModoNarrativa] = useState(false)
-  const libroRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+  const bookWrapRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
   const router = useRouter()
   const params = useParams()
@@ -117,21 +135,33 @@ export default function VistaPrevia() {
     fetchData()
   }, [historiaId])
 
-  const generarNarrativaCapitulo = async (cap: Capitulo, historia: Historia): Promise<string> => {
-    const esAutobiografia = historia.tipo === 'autobiografia'
-    const protagonista = historia.nombre_protagonista || 'el protagonista'
+  useEffect(() => {
+    const update = () => {
+      if (!bookWrapRef.current) return
+      const available = bookWrapRef.current.clientWidth - 40
+      const spreadW = PAGE_W * 2 + 8
+      setScale(Math.min(1, available / spreadW))
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
 
-   const preguntasYRespuestas = cap.preguntas
-  .map((p) => {
-    const pregunta = esAutobiografia ? p.texto_es : p.texto_es_tercera
-    const respuestas = cap.respuestas[p.id] || []
-    const tieneImagen = !!cap.imagenes[p.id]
-    const textoRespuestas = respuestas.length === 1
-      ? `Respuesta${respuestas[0].autor ? ` (escrita por ${respuestas[0].autor})` : ''}: ${respuestas[0].contenido}`
-      : respuestas.map((r) => `- ${r.autor ? `${r.autor}: ` : ''}${r.contenido}`).join('\n')
-    return `Pregunta: ${pregunta}\n${textoRespuestas}${tieneImagen ? '\n[Esta respuesta tiene una foto adjunta]' : ''}`
-  })
-  .join('\n\n')
+  const generarNarrativaCapitulo = async (cap: Capitulo, h: Historia): Promise<string> => {
+    const esAutobiografia = h.tipo === 'autobiografia'
+    const protagonista = h.nombre_protagonista || 'el protagonista'
+
+    const preguntasYRespuestas = cap.preguntas
+      .map((p) => {
+        const pregunta = esAutobiografia ? p.texto_es : p.texto_es_tercera
+        const respuestas = cap.respuestas[p.id] || []
+        const tieneImagen = !!cap.imagenes[p.id]
+        const textoRespuestas = respuestas.length === 1
+          ? `Respuesta${respuestas[0].autor ? ` (escrita por ${respuestas[0].autor})` : ''}: ${respuestas[0].contenido}`
+          : respuestas.map((r) => `- ${r.autor ? `${r.autor}: ` : ''}${r.contenido}`).join('\n')
+        return `Pregunta: ${pregunta}\n${textoRespuestas}${tieneImagen ? '\n[Esta respuesta tiene una foto adjunta]' : ''}`
+      })
+      .join('\n\n')
 
     const prompt = esAutobiografia
       ? `Sos un escritor profesional especializado en autobiografías y libros de vida. Tu tarea es transformar las siguientes respuestas de una persona sobre su vida en una narrativa literaria fluida, cálida y emotiva, escrita en primera persona.
@@ -170,14 +200,13 @@ Escribí un texto narrativo de 3 a 5 párrafos que:
 
 Escribí solo el texto narrativo, sin títulos ni introducción.`
 
-   const response = await fetch('/api/generar-narrativa', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ prompt }),
-})
-
-const data = await response.json()
-return data.texto || ''
+    const response = await fetch('/api/generar-narrativa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    })
+    const data = await response.json()
+    return data.texto || ''
   }
 
   const handleGenerarTodo = async () => {
@@ -198,14 +227,10 @@ return data.texto || ''
 
     setGenerandoCapitulo(null)
     setGenerando(false)
-    if (capituloActivo === -1 && capitulosActualizados.length > 0) {
-      setCapituloActivo(0)
-    }
   }
 
   const cargarImagenBase64 = async (url: string): Promise<string | null> => {
     try {
-      // Usar proxy para evitar problemas de CORS con Supabase Storage
       const proxyUrl = `/api/imagen-proxy?url=${encodeURIComponent(url)}`
       const response = await fetch(proxyUrl)
       if (!response.ok) return null
@@ -232,7 +257,6 @@ return data.texto || ''
       const margen = 16
       const mitad = pageW / 2
 
-      // --- PORTADA ---
       pdf.setFillColor(20, 20, 20)
       pdf.rect(0, 0, pageW, pageH, 'F')
 
@@ -269,11 +293,9 @@ return data.texto || ''
         mitad, pageH - 14, { align: 'center' }
       )
 
-      // --- CAPÍTULOS ---
       for (let capIdx = 0; capIdx < capitulos.length; capIdx++) {
         const cap = capitulos[capIdx]
 
-        // Recopilar todas las fotos del capítulo
         const fotosCapitulo: string[] = []
         for (const p of cap.preguntas) {
           const urls = cap.imagenes[p.id] || []
@@ -283,7 +305,6 @@ return data.texto || ''
           }
         }
 
-        // Texto a usar
         let textoCompleto = ''
         if (modoNarrativa && cap.narrativa) {
           textoCompleto = cap.narrativa
@@ -302,14 +323,12 @@ return data.texto || ''
         pdf.setFillColor(255, 255, 255)
         pdf.rect(0, 0, pageW, pageH, 'F')
 
-        // --- LAYOUT: fotos izquierda, texto derecha ---
         if (tieneFotos) {
           const anchoFotos = mitad
           const anchoTexto = mitad - margen * 2
           const xTexto = mitad + margen
           const gap = 2
 
-          // Layouts orgánicos según cantidad de fotos
           const n = Math.min(fotosCapitulo.length, 6)
           type Rect = { x: number; y: number; w: number; h: number }
           let rects: Rect[] = []
@@ -317,7 +336,6 @@ return data.texto || ''
           if (n === 1) {
             rects = [{ x: 0, y: 0, w: anchoFotos, h: pageH }]
           } else if (n === 2) {
-            // Una grande arriba, una más chica abajo
             const h1 = pageH * 0.62
             const h2 = pageH - h1 - gap
             rects = [
@@ -325,7 +343,6 @@ return data.texto || ''
               { x: 0, y: h1 + gap, w: anchoFotos, h: h2 },
             ]
           } else if (n === 3) {
-            // Grande izquierda, dos apiladas derecha
             const w1 = anchoFotos * 0.58
             const w2 = anchoFotos - w1 - gap
             const h2 = (pageH - gap) / 2
@@ -335,7 +352,6 @@ return data.texto || ''
               { x: w1 + gap, y: h2 + gap, w: w2, h: pageH - h2 - gap },
             ]
           } else if (n === 4) {
-            // Grilla 2x2 con alturas desiguales
             const w = (anchoFotos - gap) / 2
             const h1 = pageH * 0.55
             const h2 = pageH - h1 - gap
@@ -346,7 +362,6 @@ return data.texto || ''
               { x: w + gap, y: h2 + gap, w: w, h: pageH - h2 - gap },
             ]
           } else if (n === 5) {
-            // Grande arriba izquierda, dos arriba derecha, dos abajo
             const w = (anchoFotos - gap) / 2
             const h1 = pageH * 0.5
             const h2 = pageH - h1 - gap
@@ -359,7 +374,6 @@ return data.texto || ''
               { x: w3 + gap, y: h1 + gap, w: anchoFotos - w3 - gap, h: h2 },
             ]
           } else {
-            // 6 fotos: 3 filas x 2 columnas con alturas variables
             const w = (anchoFotos - gap) / 2
             const h1 = pageH * 0.38
             const h2 = pageH * 0.34
@@ -388,32 +402,20 @@ return data.texto || ''
               const ratio = dimensiones.w / dimensiones.h
               let drawW = r.w
               let drawH = r.w / ratio
-
-              // Si la altura calculada supera la celda, ajustar por altura
-              if (drawH > r.h) {
-                drawH = r.h
-                drawW = r.h * ratio
-              }
-
-              // Centrar dentro de la celda sin recortar
+              if (drawH > r.h) { drawH = r.h; drawW = r.h * ratio }
               const offsetX = r.x + (r.w - drawW) / 2
               const offsetY = r.y + (r.h - drawH) / 2
-
               pdf.addImage(fotosCapitulo[i], 'JPEG', offsetX, offsetY, drawW, drawH)
             } catch {}
           }
 
-          // Texto lado derecho
           const parrafos = textoCompleto.split('\n\n').filter(Boolean)
           const lineHeight = 5.2
-          const fontSize = 10
-          pdf.setFontSize(fontSize)
+          pdf.setFontSize(10)
           pdf.setFont('helvetica', 'normal')
           pdf.setTextColor(25, 25, 25)
-
           let y = margen + 4
           const maxY = pageH - margen - 16
-
           for (const parrafo of parrafos) {
             const lines = pdf.splitTextToSize(parrafo, anchoTexto)
             const h = lines.length * lineHeight
@@ -422,7 +424,6 @@ return data.texto || ''
             y += h + 5
           }
 
-          // Nombre abajo a la derecha
           const nombreAutor = historia?.nombre_protagonista ||
             (historia?.tipo === 'autobiografia' ? historia?.titulo?.split(' ')[0] : '')
           if (nombreAutor) {
@@ -431,9 +432,7 @@ return data.texto || ''
             pdf.setTextColor(100, 100, 100)
             pdf.text(nombreAutor, pageW - margen, pageH - margen, { align: 'right' })
           }
-
         } else {
-          // Sin fotos: texto centrado en toda la página
           const anchoTexto = pageW - margen * 4
           const xTexto = margen * 2
           const parrafos = textoCompleto.split('\n\n').filter(Boolean)
@@ -441,10 +440,8 @@ return data.texto || ''
           pdf.setFontSize(11)
           pdf.setFont('helvetica', 'normal')
           pdf.setTextColor(25, 25, 25)
-
           let y = margen + 8
           const maxY = pageH - margen - 16
-
           for (const parrafo of parrafos) {
             const lines = pdf.splitTextToSize(parrafo, anchoTexto)
             const h = lines.length * lineHeight
@@ -452,7 +449,6 @@ return data.texto || ''
             pdf.text(lines, xTexto, y)
             y += h + 6
           }
-
           const nombreAutor = historia?.nombre_protagonista ||
             (historia?.tipo === 'autobiografia' ? historia?.titulo?.split(' ')[0] : '')
           if (nombreAutor) {
@@ -463,7 +459,6 @@ return data.texto || ''
           }
         }
 
-        // Número de página centrado abajo
         pdf.setFontSize(8)
         pdf.setFont('helvetica', 'normal')
         pdf.setTextColor(180, 180, 180)
@@ -477,78 +472,158 @@ return data.texto || ''
     setExportando(false)
   }
 
+  const renderPhotoGrid = (urls: string[]) => {
+    const n = Math.min(urls.length, 6)
+    if (n === 0) {
+      return (
+        <div style={{ width: '100%', height: '100%', background: '#F7F2EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 56, height: 2, background: '#E0D4C4', borderRadius: 2 }} />
+        </div>
+      )
+    }
+
+    type PctRect = { left: number; top: number; width: number; height: number }
+    let layout: PctRect[] = []
+
+    if (n === 1) {
+      layout = [{ left: 0, top: 0, width: 100, height: 100 }]
+    } else if (n === 2) {
+      layout = [
+        { left: 0, top: 0, width: 100, height: 62 },
+        { left: 0, top: 62.4, width: 100, height: 37.6 },
+      ]
+    } else if (n === 3) {
+      layout = [
+        { left: 0, top: 0, width: 57.5, height: 100 },
+        { left: 58, top: 0, width: 42, height: 49.5 },
+        { left: 58, top: 50, width: 42, height: 50 },
+      ]
+    } else if (n === 4) {
+      layout = [
+        { left: 0, top: 0, width: 49.5, height: 55 },
+        { left: 50, top: 0, width: 50, height: 45 },
+        { left: 0, top: 55.5, width: 49.5, height: 44.5 },
+        { left: 50, top: 45.5, width: 50, height: 54.5 },
+      ]
+    } else if (n === 5) {
+      layout = [
+        { left: 0, top: 0, width: 49.5, height: 50 },
+        { left: 50, top: 0, width: 50, height: 30 },
+        { left: 50, top: 30.5, width: 50, height: 19.5 },
+        { left: 0, top: 50.5, width: 32, height: 49.5 },
+        { left: 32.5, top: 50.5, width: 67.5, height: 49.5 },
+      ]
+    } else {
+      layout = [
+        { left: 0, top: 0, width: 49.5, height: 38 },
+        { left: 50, top: 0, width: 50, height: 34 },
+        { left: 0, top: 38.5, width: 49.5, height: 34 },
+        { left: 50, top: 34.5, width: 50, height: 38 },
+        { left: 0, top: 73, width: 49.5, height: 27 },
+        { left: 50, top: 73, width: 50, height: 27 },
+      ]
+    }
+
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        {layout.slice(0, n).map((rect, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: `${rect.left}%`, top: `${rect.top}%`,
+              width: `${rect.width}%`, height: `${rect.height}%`,
+              overflow: 'hidden',
+            }}
+          >
+            <img
+              src={urls[i]}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   if (loading) return (
-    <main className="min-h-screen bg-[#141414] flex items-center justify-center">
-      <p className="text-sm text-white/50">Cargando...</p>
+    <main style={{ minHeight: '100vh', background: '#141414', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Cargando...</p>
     </main>
   )
 
   if (!historia) return null
 
-  const fecha = new Date().toLocaleDateString('es-UY', {
-    day: 'numeric', month: 'long', year: 'numeric'
-  })
-
-  const capActual = capitulos[capituloActivo]
+  const fecha = new Date().toLocaleDateString('es-UY', { day: 'numeric', month: 'long', year: 'numeric' })
+  const scaledH = Math.round(PAGE_H * scale)
+  const scaledW = Math.round((PAGE_W * 2 + 8) * scale)
 
   return (
-    <main className="min-h-screen bg-[#1A1A1A] flex flex-col">
+    <main style={{ minHeight: '100vh', background: '#1A1A1A', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Header oscuro */}
-      <header className="sticky top-0 z-10 bg-[#141414] border-b border-white/10 px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      {/* Header */}
+      <header style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#141414', borderBottom: '1px solid rgba(255,255,255,0.08)',
+        height: 56, display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', padding: '0 16px', flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Image
-            src="/logo.jpg"
-            alt="Keep Alive"
-            width={36}
-            height={36}
-            className="object-contain rounded-lg cursor-pointer"
+            src="/logo.jpg" alt="Keep Alive" width={30} height={30}
+            style={{ objectFit: 'contain', borderRadius: 8, cursor: 'pointer' }}
             onClick={() => router.push(`/dashboard/historia/${historiaId}`)}
           />
           <button
             onClick={() => router.push(`/dashboard/historia/${historiaId}`)}
-            className="text-sm text-white/50 hover:text-white"
+            style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             ← Historia
           </button>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Toggle modo */}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {capitulos.length > 0 && (
-            <div className="flex items-center bg-white/10 rounded-xl p-1 gap-1">
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: 3, gap: 2 }}>
               <button
                 onClick={() => setModoNarrativa(false)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  !modoNarrativa
-                    ? 'bg-white text-[#141414]'
-                    : 'text-white/50 hover:text-white'
-                }`}
+                style={{
+                  padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 500,
+                  border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                  background: !modoNarrativa ? 'white' : 'transparent',
+                  color: !modoNarrativa ? '#141414' : 'rgba(255,255,255,0.45)',
+                }}
               >
                 Original
               </button>
               <button
-                onClick={() => {
-                  setModoNarrativa(true)
-                  if (!capitulos.some(c => c.narrativa)) handleGenerarTodo()
+                onClick={() => { setModoNarrativa(true); if (!capitulos.some(c => c.narrativa)) handleGenerarTodo() }}
+                style={{
+                  padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 500,
+                  border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                  background: modoNarrativa ? 'white' : 'transparent',
+                  color: modoNarrativa ? '#141414' : 'rgba(255,255,255,0.45)',
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  modoNarrativa
-                    ? 'bg-white text-[#141414]'
-                    : 'text-white/50 hover:text-white'
-                }`}
               >
                 {generando ? 'Generando...' : '✨ Narrativa'}
               </button>
             </div>
           )}
+
           <button
             onClick={handleExportarPDF}
             disabled={exportando}
-            className="h-9 px-4 bg-white text-[#141414] text-sm font-medium rounded-xl hover:bg-white/90 active:scale-[0.98] disabled:opacity-50 flex items-center gap-2"
+            style={{
+              height: 34, padding: '0 14px', background: 'white', color: '#141414',
+              fontSize: 12, fontWeight: 500, border: 'none', borderRadius: 9,
+              cursor: exportando ? 'default' : 'pointer', opacity: exportando ? 0.6 : 1,
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
           >
             {exportando ? (
               <>
-                <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg style={{ animation: 'spin 1s linear infinite' }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".3"/>
                   <path d="M21 12a9 9 0 00-9-9"/>
                 </svg>
@@ -556,7 +631,7 @@ return data.texto || ''
               </>
             ) : (
               <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
                 </svg>
                 Exportar PDF
@@ -566,222 +641,181 @@ return data.texto || ''
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col items-center py-8 px-4 gap-6">
-
-        {/* Navegación de páginas */}
-        <div className="flex gap-2 overflow-x-auto pb-1 max-w-2xl w-full">
-          <button
-            onClick={() => setCapituloActivo(-1)}
-            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm transition-colors ${
-              capituloActivo === -1
-                ? 'bg-white text-[#141414] font-medium'
-                : 'border border-white/20 text-white/50 hover:text-white'
-            }`}
-          >
-            Portada
-          </button>
-          {capitulos.map((c, i) => (
-            <button
-              key={c.topico.id}
-              onClick={() => setCapituloActivo(i)}
-              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm transition-colors ${
-                i === capituloActivo
-                  ? 'bg-white text-[#141414] font-medium'
-                  : 'border border-white/20 text-white/50 hover:text-white'
-              }`}
+      {/* Book viewer */}
+      <div
+        ref={bookWrapRef}
+        style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          padding: '40px 20px 48px', gap: 20,
+        }}
+      >
+        {/* Wrapper sized to actual scaled book dimensions */}
+        <div style={{ width: scaledW, height: scaledH, position: 'relative', flexShrink: 0 }}>
+          <div style={{
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            width: PAGE_W * 2 + 8,
+            height: PAGE_H,
+            filter: 'drop-shadow(0 40px 80px rgba(0,0,0,0.8))',
+          }}>
+            <HTMLFlipBook
+              width={PAGE_W}
+              height={PAGE_H}
+              size="fixed"
+              minWidth={PAGE_W}
+              maxWidth={PAGE_W}
+              minHeight={PAGE_H}
+              maxHeight={PAGE_H}
+              showCover={true}
+              mobileScrollSupport={false}
+              flippingTime={650}
+              style={{}}
             >
-              {c.topico.nombre_es}
-            </button>
-          ))}
-        </div>
-
-        {/* Libro */}
-        <div ref={libroRef} className="w-full max-w-4xl">
-
-          {/* Portada */}
-          {capituloActivo === -1 && (
-            <div className="bg-[#141414] rounded-2xl aspect-[4/3] flex flex-col items-center justify-center gap-6 p-10 border border-white/10 relative">
-              <Image
-                src="/logo.jpg"
-                alt="Keep Alive"
-                width={80}
-                height={80}
-                className="object-contain rounded-xl opacity-80"
-              />
-              <div className="text-center flex flex-col gap-3">
-                <h1 className="text-3xl sm:text-4xl font-medium text-white">{historia.titulo}</h1>
-                {historia.descripcion && (
-                  <p className="text-base text-white/50">{historia.descripcion}</p>
-                )}
-              </div>
-              <div className="absolute bottom-8 right-10 text-right">
-                {historia.nombre_protagonista && (
-                  <p className="text-sm text-white/60">{historia.nombre_protagonista}</p>
-                )}
-                <p className="text-sm text-white/40">{fecha}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Capítulo */}
-          {capituloActivo >= 0 && capActual && (
-            <div className="bg-white rounded-2xl overflow-hidden border border-white/10">
-              {/* Título del capítulo */}
-              <div className="px-8 py-5 border-b border-[var(--color-borde)] flex items-center gap-3">
-                <div className="w-1 h-6 bg-[var(--color-azul)] rounded-full" />
-                <h2 className="text-lg font-medium text-[#141414]">{capActual.topico.nombre_es}</h2>
-                {modoNarrativa && generandoCapitulo === capituloActivo && (
-                  <span className="ml-auto text-xs text-[var(--color-azul)] flex items-center gap-1.5">
-                    <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".3"/>
-                      <path d="M21 12a9 9 0 00-9-9"/>
-                    </svg>
-                    Generando narrativa...
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-col sm:flex-row">
-                {/* Texto */}
-                <div className="flex-1 px-8 py-6 flex flex-col gap-6">
-                  {modoNarrativa ? (
-                    capActual.narrativa ? (
-                      <div className="flex flex-col gap-6">
-                        {(() => {
-                          const parrafos = capActual.narrativa.split('\n\n').filter(Boolean)
-                          const fotos = capActual.preguntas.filter((p) => capActual.imagenes[p.id])
-                          const resultado: React.ReactNode[] = []
-
-                          parrafos.forEach((parrafo, i) => {
-                            resultado.push(
-                              <p key={`p-${i}`} className="text-base text-[#1A1A1A] leading-[1.85] tracking-wide">
-                                {parrafo}
-                              </p>
-                            )
-                            // Intercalar foto después de cada párrafo si hay fotos disponibles
-                            const fotoIndex = Math.floor((i / parrafos.length) * fotos.length)
-                            if (fotos[fotoIndex] && i < parrafos.length - 1 && (i + 1) % Math.max(1, Math.floor(parrafos.length / fotos.length)) === 0) {
-                              const foto = fotos.shift()
-                              if (foto) {
-                                const urls = capActual.imagenes[foto.id] || []
-                                urls.forEach((url, urlIdx) => {
-                                  resultado.push(
-                                    <div key={`img-${foto.id}-${urlIdx}`} className="rounded-2xl overflow-hidden">
-                                      <img src={url} alt="Foto" className="w-full object-cover max-h-80 rounded-2xl" />
-                                    </div>
-                                  )
-                                })
-                              }
-                            }
-                          })
-
-                          // Fotos restantes al final
-                          fotos.forEach((foto) => {
-                            const urls = capActual.imagenes[foto.id] || []
-                            urls.forEach((url, urlIdx) => {
-                              resultado.push(
-                                <div key={`img-end-${foto.id}-${urlIdx}`} className="rounded-2xl overflow-hidden">
-                                  <img src={url} alt="Foto" className="w-full object-cover max-h-80 rounded-2xl" />
-                                </div>
-                              )
-                            })
-                          })
-
-                          return resultado
-                        })()}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-12 gap-3">
-                        <svg className="animate-spin text-[var(--color-azul)]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".3"/>
-                          <path d="M21 12a9 9 0 00-9-9"/>
-                        </svg>
-                        <p className="text-sm text-[#888888]">Generando narrativa...</p>
-                      </div>
-                    )
-                  ) : (
-                    <div className="flex flex-col gap-6">
-                      {capActual.preguntas.map((p) => (
-                        <div key={p.id} className="flex flex-col gap-3">
-                          <p className="text-xs text-[var(--color-azul)] italic">
-                            {historia.tipo === 'autobiografia' ? p.texto_es : p.texto_es_tercera}
-                          </p>
-                          {(capActual.respuestas[p.id] || []).map((resp, idx) => (
-                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              {resp.autor && (
-                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                  <div style={{
-                                    width: 20, height: 20, borderRadius: '50%',
-                                    background: 'var(--color-terracota)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0,
-                                  }}>
-                                    {resp.autor[0].toUpperCase()}
-                                  </div>
-                                  <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-gris)' }}>
-                                    {resp.autor}
-                                  </span>
-                                </div>
-                              )}
-                              <p className="text-sm text-[#141414] leading-relaxed">{resp.contenido}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
+              {/* Portada */}
+              <BookPage>
+                <div style={{
+                  width: '100%', height: '100%', background: '#141414',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  justifyContent: 'center', padding: '40px 32px',
+                  boxSizing: 'border-box', position: 'relative',
+                }}>
+                  <Image
+                    src="/logo.jpg" alt="Keep Alive" width={52} height={52}
+                    style={{ objectFit: 'contain', borderRadius: 12, opacity: 0.75, marginBottom: 28 }}
+                  />
+                  <h1 style={{ fontSize: 24, fontWeight: 500, color: 'white', textAlign: 'center', lineHeight: 1.35, margin: 0 }}>
+                    {historia.titulo}
+                  </h1>
+                  {historia.descripcion && (
+                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', textAlign: 'center', marginTop: 10 }}>
+                      {historia.descripcion}
+                    </p>
                   )}
-                </div>
-
-                {/* Fotos — solo en modo original */}
-                {!modoNarrativa && capActual.preguntas.some((p) => capActual.imagenes[p.id]?.length > 0) && (
-                  <div className="w-full sm:w-64 p-4 grid grid-cols-2 gap-2 content-start border-t sm:border-t-0 sm:border-l border-[var(--color-borde)]">
-                    {capActual.preguntas
-                      .filter((p) => capActual.imagenes[p.id]?.length > 0)
-                      .flatMap((p) => capActual.imagenes[p.id])
-                      .map((url, i) => (
-                        <img
-                          key={i}
-                          src={url}
-                          alt={`Foto ${i + 1}`}
-                          className="w-full aspect-square object-cover rounded-lg"
-                        />
-                      ))}
+                  <div style={{ position: 'absolute', bottom: 28, right: 28, textAlign: 'right' }}>
+                    {historia.nombre_protagonista && (
+                      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontStyle: 'italic', margin: 0 }}>
+                        {historia.nombre_protagonista}
+                      </p>
+                    )}
+                    <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', marginTop: 4 }}>{fecha}</p>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
+                </div>
+              </BookPage>
 
-          {capitulos.length === 0 && capituloActivo >= 0 && (
-            <div className="bg-white/10 rounded-2xl p-10 text-center">
-              <p className="text-white/50 text-sm">Todavía no hay respuestas para mostrar.</p>
-            </div>
-          )}
+              {/* Contraportada (hoja tras la tapa) */}
+              <BookPage>
+                <div style={{ width: '100%', height: '100%', background: '#1C1C1C' }} />
+              </BookPage>
+
+              {/* Capítulos: 2 páginas cada uno */}
+              {capitulos.flatMap((cap, idx) => {
+                const allUrls = cap.preguntas.flatMap(p => cap.imagenes[p.id] || [])
+                return [
+                  // Página izquierda: fotos
+                  <BookPage key={`${cap.topico.id}-L`}>
+                    <div style={{ width: '100%', height: '100%' }}>
+                      {renderPhotoGrid(allUrls)}
+                    </div>
+                  </BookPage>,
+
+                  // Página derecha: texto
+                  <BookPage key={`${cap.topico.id}-R`}>
+                    <div style={{
+                      width: '100%', height: '100%', background: 'white',
+                      padding: '22px 28px 16px', boxSizing: 'border-box',
+                      display: 'flex', flexDirection: 'column',
+                    }}>
+                      {/* Título capítulo */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexShrink: 0 }}>
+                        <div style={{ width: 3, height: 14, background: '#5B84B1', borderRadius: 2, flexShrink: 0 }} />
+                        <h2 style={{ fontSize: 11, fontWeight: 500, color: '#141414', margin: 0 }}>{cap.topico.nombre_es}</h2>
+                        {generandoCapitulo === idx && modoNarrativa && (
+                          <span style={{ marginLeft: 'auto', fontSize: 9, color: '#5B84B1' }}>Generando...</span>
+                        )}
+                      </div>
+
+                      {/* Contenido */}
+                      <div style={{ flex: 1, overflow: 'hidden' }}>
+                        {modoNarrativa ? (
+                          cap.narrativa ? (
+                            <p style={{
+                              fontSize: 9, lineHeight: 1.8, color: '#1A1A1A',
+                              fontFamily: 'Georgia, serif', margin: 0, whiteSpace: 'pre-wrap',
+                            }}>
+                              {cap.narrativa}
+                            </p>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                              <p style={{ fontSize: 11, color: '#AAAAAA' }}>Generando narrativa...</p>
+                            </div>
+                          )
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {cap.preguntas.map((p) =>
+                              (cap.respuestas[p.id] || []).map((resp, ridx) => (
+                                <div key={`${p.id}-${ridx}`} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                  {resp.autor && (
+                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                      <div style={{
+                                        width: 13, height: 13, borderRadius: '50%',
+                                        background: '#D08B70', display: 'flex',
+                                        alignItems: 'center', justifyContent: 'center',
+                                        fontSize: 6, fontWeight: 700, color: 'white', flexShrink: 0,
+                                      }}>
+                                        {resp.autor[0].toUpperCase()}
+                                      </div>
+                                      <span style={{ fontSize: 8, fontWeight: 500, color: '#888' }}>{resp.autor}</span>
+                                    </div>
+                                  )}
+                                  <p style={{ fontSize: 9, lineHeight: 1.75, color: '#1A1A1A', margin: 0 }}>
+                                    {resp.contenido}
+                                  </p>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        paddingTop: 8, marginTop: 8,
+                        borderTop: '1px solid #F0F0F0', flexShrink: 0,
+                      }}>
+                        <span style={{ fontSize: 7, color: '#CCCCCC' }}>{idx + 1}</span>
+                        <span style={{ fontSize: 8, fontStyle: 'italic', color: '#BBBBBB' }}>
+                          {historia.nombre_protagonista || ''}
+                        </span>
+                      </div>
+                    </div>
+                  </BookPage>,
+                ]
+              })}
+
+              {/* Última página: contraportada */}
+              <BookPage>
+                <div style={{
+                  width: '100%', height: '100%', background: '#141414',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Image
+                    src="/logo.jpg" alt="" width={34} height={34}
+                    style={{ objectFit: 'contain', borderRadius: 8, opacity: 0.12 }}
+                  />
+                </div>
+              </BookPage>
+            </HTMLFlipBook>
+          </div>
         </div>
 
-        {/* Navegación entre páginas */}
-        {capitulos.length > 0 && (
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setCapituloActivo((prev) => Math.max(-1, prev - 1))}
-              disabled={capituloActivo === -1}
-              className="text-sm text-white/50 hover:text-white disabled:opacity-20"
-            >
-              ← Anterior
-            </button>
-            <span className="text-xs text-white/30">
-              {capituloActivo === -1 ? 'Portada' : `${capituloActivo + 1} / ${capitulos.length}`}
-            </span>
-            <button
-              onClick={() => setCapituloActivo((prev) => Math.min(capitulos.length - 1, prev + 1))}
-              disabled={capituloActivo === capitulos.length - 1}
-              className="text-sm text-white/50 hover:text-white disabled:opacity-20"
-            >
-              Siguiente →
-            </button>
-          </div>
-        )}
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', textAlign: 'center' }}>
+          Hacé clic en los bordes o arrastrá para pasar la página
+        </p>
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </main>
   )
 }
