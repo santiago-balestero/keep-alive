@@ -261,7 +261,7 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
       pdf.rect(0, 0, pageW, pageH, 'F')
 
       try {
-        const logoBase64 = await cargarImagenBase64(`${window.location.origin}/logo.jpg`)
+        const logoBase64 = await cargarImagenBase64(`${window.location.origin}/logo.png`)
         if (logoBase64) pdf.addImage(logoBase64, 'JPEG', mitad - 18, 28, 36, 36)
       } catch {}
 
@@ -571,7 +571,7 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Image
-            src="/logo.jpg" alt="Keep Alive" width={30} height={30}
+            src="/logo.png" alt="Keep Alive" width={30} height={30}
             style={{ objectFit: 'contain', borderRadius: 8, cursor: 'pointer' }}
             onClick={() => router.push(`/dashboard/historia/${historiaId}`)}
           />
@@ -681,7 +681,7 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
                   boxSizing: 'border-box', position: 'relative',
                 }}>
                   <Image
-                    src="/logo.jpg" alt="Keep Alive" width={52} height={52}
+                    src="/logo.png" alt="Keep Alive" width={52} height={52}
                     style={{ objectFit: 'contain', borderRadius: 12, opacity: 0.75, marginBottom: 28 }}
                   />
                   <h1 style={{ fontSize: 24, fontWeight: 500, color: 'white', textAlign: 'center', lineHeight: 1.35, margin: 0 }}>
@@ -703,95 +703,97 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
                 </div>
               </BookPage>
 
-              {/* Contraportada (hoja tras la tapa) */}
-              <BookPage>
-                <div style={{ width: '100%', height: '100%', background: '#1C1C1C' }} />
-              </BookPage>
-
-              {/* Capítulos: 2 páginas cada uno */}
-              {capitulos.flatMap((cap, idx) => {
+              {/* Capítulos: 1 página cada uno (fotos izq + texto der) */}
+              {capitulos.map((cap, idx) => {
                 const allUrls = cap.preguntas.flatMap(p => cap.imagenes[p.id] || [])
-                return [
-                  // Página izquierda: fotos
-                  <BookPage key={`${cap.topico.id}-L`}>
-                    <div style={{ width: '100%', height: '100%' }}>
-                      {renderPhotoGrid(allUrls)}
-                    </div>
-                  </BookPage>,
+                const hasPhotos = allUrls.length > 0
+                return (
+                  <BookPage key={cap.topico.id}>
+                    <div style={{ width: '100%', height: '100%', background: 'white', display: 'flex' }}>
 
-                  // Página derecha: texto
-                  <BookPage key={`${cap.topico.id}-R`}>
-                    <div style={{
-                      width: '100%', height: '100%', background: 'white',
-                      padding: '22px 28px 16px', boxSizing: 'border-box',
-                      display: 'flex', flexDirection: 'column',
-                    }}>
-                      {/* Título capítulo */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexShrink: 0 }}>
-                        <div style={{ width: 3, height: 14, background: '#5B84B1', borderRadius: 2, flexShrink: 0 }} />
-                        <h2 style={{ fontSize: 11, fontWeight: 500, color: '#141414', margin: 0 }}>{cap.topico.nombre_es}</h2>
-                        {generandoCapitulo === idx && modoNarrativa && (
-                          <span style={{ marginLeft: 'auto', fontSize: 9, color: '#5B84B1' }}>Generando...</span>
-                        )}
-                      </div>
+                      {/* Mitad izquierda: fotos */}
+                      {hasPhotos && (
+                        <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
+                          {renderPhotoGrid(allUrls)}
+                        </div>
+                      )}
 
-                      {/* Contenido */}
-                      <div style={{ flex: 1, overflow: 'hidden' }}>
-                        {modoNarrativa ? (
-                          cap.narrativa ? (
-                            <p style={{
-                              fontSize: 9, lineHeight: 1.8, color: '#1A1A1A',
-                              fontFamily: 'Georgia, serif', margin: 0, whiteSpace: 'pre-wrap',
-                            }}>
-                              {cap.narrativa}
-                            </p>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                              <p style={{ fontSize: 11, color: '#AAAAAA' }}>Generando narrativa...</p>
-                            </div>
-                          )
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {cap.preguntas.map((p) =>
-                              (cap.respuestas[p.id] || []).map((resp, ridx) => (
-                                <div key={`${p.id}-${ridx}`} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                  {resp.autor && (
-                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                                      <div style={{
-                                        width: 13, height: 13, borderRadius: '50%',
-                                        background: '#D08B70', display: 'flex',
-                                        alignItems: 'center', justifyContent: 'center',
-                                        fontSize: 6, fontWeight: 700, color: 'white', flexShrink: 0,
-                                      }}>
-                                        {resp.autor[0].toUpperCase()}
-                                      </div>
-                                      <span style={{ fontSize: 8, fontWeight: 500, color: '#888' }}>{resp.autor}</span>
-                                    </div>
-                                  )}
-                                  <p style={{ fontSize: 9, lineHeight: 1.75, color: '#1A1A1A', margin: 0 }}>
-                                    {resp.contenido}
-                                  </p>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Footer */}
+                      {/* Mitad derecha (o ancho completo): texto */}
                       <div style={{
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        paddingTop: 8, marginTop: 8,
-                        borderTop: '1px solid #F0F0F0', flexShrink: 0,
+                        flex: 1, height: '100%',
+                        padding: hasPhotos ? '22px 22px 16px 18px' : '22px 32px 16px',
+                        boxSizing: 'border-box',
+                        display: 'flex', flexDirection: 'column',
+                        borderLeft: hasPhotos ? '1px solid #EEEEEE' : 'none',
                       }}>
-                        <span style={{ fontSize: 7, color: '#CCCCCC' }}>{idx + 1}</span>
-                        <span style={{ fontSize: 8, fontStyle: 'italic', color: '#BBBBBB' }}>
-                          {historia.nombre_protagonista || ''}
-                        </span>
+                        {/* Título capítulo */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexShrink: 0 }}>
+                          <div style={{ width: 3, height: 13, background: '#5B84B1', borderRadius: 2, flexShrink: 0 }} />
+                          <h2 style={{ fontSize: 10, fontWeight: 500, color: '#141414', margin: 0 }}>{cap.topico.nombre_es}</h2>
+                          {generandoCapitulo === idx && modoNarrativa && (
+                            <span style={{ marginLeft: 'auto', fontSize: 8, color: '#5B84B1' }}>Generando...</span>
+                          )}
+                        </div>
+
+                        {/* Contenido */}
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                          {modoNarrativa ? (
+                            cap.narrativa ? (
+                              <p style={{
+                                fontSize: 8.5, lineHeight: 1.8, color: '#1A1A1A',
+                                fontFamily: 'Georgia, serif', margin: 0, whiteSpace: 'pre-wrap',
+                              }}>
+                                {cap.narrativa}
+                              </p>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                                <p style={{ fontSize: 10, color: '#AAAAAA' }}>Generando narrativa...</p>
+                              </div>
+                            )
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                              {cap.preguntas.map((p) =>
+                                (cap.respuestas[p.id] || []).map((resp, ridx) => (
+                                  <div key={`${p.id}-${ridx}`} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                    {resp.autor && (
+                                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                        <div style={{
+                                          width: 13, height: 13, borderRadius: '50%',
+                                          background: '#D08B70', display: 'flex',
+                                          alignItems: 'center', justifyContent: 'center',
+                                          fontSize: 6, fontWeight: 700, color: 'white', flexShrink: 0,
+                                        }}>
+                                          {resp.autor[0].toUpperCase()}
+                                        </div>
+                                        <span style={{ fontSize: 8, fontWeight: 500, color: '#888' }}>{resp.autor}</span>
+                                      </div>
+                                    )}
+                                    <p style={{ fontSize: 8.5, lineHeight: 1.75, color: '#1A1A1A', margin: 0 }}>
+                                      {resp.contenido}
+                                    </p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Footer */}
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          paddingTop: 8, marginTop: 8,
+                          borderTop: '1px solid #F0F0F0', flexShrink: 0,
+                        }}>
+                          <span style={{ fontSize: 7, color: '#CCCCCC' }}>{idx + 1}</span>
+                          <span style={{ fontSize: 8, fontStyle: 'italic', color: '#BBBBBB' }}>
+                            {historia.nombre_protagonista || ''}
+                          </span>
+                        </div>
                       </div>
+
                     </div>
-                  </BookPage>,
-                ]
+                  </BookPage>
+                )
               })}
 
               {/* Última página: contraportada */}
@@ -801,7 +803,7 @@ Escribí solo el texto narrativo, sin títulos ni introducción.`
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <Image
-                    src="/logo.jpg" alt="" width={34} height={34}
+                    src="/logo.png" alt="" width={34} height={34}
                     style={{ objectFit: 'contain', borderRadius: 8, opacity: 0.12 }}
                   />
                 </div>

@@ -131,7 +131,7 @@ export default function Colaboradores() {
     <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
       <header className="page-header">
         <div className="page-header-inner">
-          <Image src="/logo.jpg" alt="Keep Alive" width={36} height={36} style={{ objectFit: 'contain', borderRadius: 12, cursor: 'pointer' }} onClick={() => router.push(`/dashboard/historia/${historiaId}`)} />
+          <Image src="/logo.png" alt="Keep Alive" width={36} height={36} style={{ objectFit: 'contain', borderRadius: 12, cursor: 'pointer' }} onClick={() => router.push(`/dashboard/historia/${historiaId}`)} />
           <button onClick={() => router.push(`/dashboard/historia/${historiaId}`)} style={{ fontSize: 14, color: 'var(--color-azul)', background: 'none', border: 'none', cursor: 'pointer' }}>
             ← Historia
           </button>

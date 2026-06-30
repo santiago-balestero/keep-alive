@@ -276,7 +276,7 @@ export default function ColaborarPage() {
   if (estado === 'pidiendo-nombre') return (
     <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
-        <Image src="/logo.jpg" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
+        <Image src="/logo.png" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <h1 style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-texto)' }}>Hola, ¿cómo te llamás?</h1>
           <p style={{ fontSize: 14, color: 'var(--color-gris)' }}>
@@ -328,7 +328,7 @@ export default function ColaborarPage() {
   if (estado === 'bienvenida') return (
     <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
-        <Image src="/logo.jpg" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
+        <Image src="/logo.png" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <h1 style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-texto)' }}>
             Hola, {nombreColaborador}! 👋
@@ -355,7 +355,7 @@ export default function ColaborarPage() {
     <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
       <header className="page-header">
         <div className="page-header-inner">
-          <Image src="/logo.jpg" alt="Keep Alive" width={36} height={36} className="object-contain rounded-xl" />
+          <Image src="/logo.png" alt="Keep Alive" width={36} height={36} className="object-contain rounded-xl" />
         </div>
       </header>
       <div className="page-container" style={{ paddingTop: 32, paddingBottom: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -394,7 +394,7 @@ export default function ColaborarPage() {
     <main style={{ minHeight: '100vh', background: 'var(--color-crema)' }}>
       <header className="page-header">
         <div className="page-header-inner">
-          <Image src="/logo.jpg" alt="Keep Alive" width={36} height={36} className="object-contain rounded-xl" />
+          <Image src="/logo.png" alt="Keep Alive" width={36} height={36} className="object-contain rounded-xl" />
           <button
             onClick={() => setEstado('eligiendo-topico')}
             style={{ fontSize: 14, color: 'var(--color-azul)', background: 'none', border: 'none', cursor: 'pointer' }}

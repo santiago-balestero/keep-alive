@@ -44,7 +44,7 @@ export default function NuevaContrasena() {
     <main style={{ minHeight: '100vh', background: 'var(--color-crema)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 360, background: 'white', borderRadius: 20, border: '1.5px solid var(--color-borde)', padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
 
-        <Image src="/logo.jpg" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
+        <Image src="/logo.png" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
 
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--color-texto)' }}>Nueva contraseña</h1>

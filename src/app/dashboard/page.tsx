@@ -53,7 +53,7 @@ export default function Dashboard() {
       <header className="page-header">
         <div className="page-header-inner">
           <Image
-            src="/logo.jpg"
+            src="/logo.png"
             alt="Keep Alive"
             width={36}
             height={36}

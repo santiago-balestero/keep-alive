@@ -18,7 +18,7 @@ export default function Header({ backUrl, backLabel, rightContent, title }: Prop
       <div className="page-header-inner">
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
           <Image
-            src="/logo.jpg"
+            src="/logo.png"
             alt="Keep Alive"
             width={36}
             height={36}

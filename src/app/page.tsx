@@ -44,7 +44,7 @@ export default function LoginPage() {
 
       {/* Panel izquierdo — solo desktop */}
       <div className="hidden sm:flex w-[420px] flex-shrink-0 flex-col items-center justify-center p-12 gap-8" style={{ background: 'var(--color-terracota)' }}>
-        <Image src="/logo.jpg" alt="Keep Alive" width={120} height={120} className="object-contain rounded-2xl" />
+        <Image src="/logo.png" alt="Keep Alive" width={120} height={120} className="object-contain rounded-2xl" />
         <div className="text-center flex flex-col gap-3">
           <h2 className="text-2xl font-light text-white">
             Tu historia,<br />tu legado.
@@ -60,7 +60,7 @@ export default function LoginPage() {
 
         {/* Logo mobile */}
         <div className="sm:hidden mb-8 flex flex-col items-center gap-4">
-          <Image src="/logo.jpg" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
+          <Image src="/logo.png" alt="Keep Alive" width={80} height={80} className="object-contain rounded-2xl" />
           <p className="text-sm" style={{ color: 'var(--color-gris)' }}>Tu historia, tu legado.</p>
         </div>
 
