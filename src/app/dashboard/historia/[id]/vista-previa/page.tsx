@@ -19,10 +19,9 @@ type Pregunta = {
   texto_es_tercera: string
 }
 
-type Respuesta = {
-  id_pregunta: number
+type RespuestaConAutor = {
   contenido: string
-  imagen_url: string | null
+  autor: string | null
 }
 
 type Topico = {
@@ -33,8 +32,7 @@ type Topico = {
 type Capitulo = {
   topico: Topico
   preguntas: Pregunta[]
-  respuestas: Record<number, string>
-  autores: Record<number, string>
+  respuestas: Record<number, RespuestaConAutor[]>
   imagenes: Record<number, string[]>
   narrativa?: string
 }
@@ -73,11 +71,10 @@ export default function VistaPrevia() {
         .select('id_pregunta, contenido, nombre_autor')
         .eq('id_historia', historiaId)
 
-      const mapaRespuestas: Record<number, string> = {}
-      const mapaAutores: Record<number, string> = {}
+      const mapaRespuestas: Record<number, RespuestaConAutor[]> = {}
       respuestasData?.forEach((r: any) => {
-        mapaRespuestas[r.id_pregunta] = r.contenido
-        if (r.nombre_autor) mapaAutores[r.id_pregunta] = r.nombre_autor
+        if (!mapaRespuestas[r.id_pregunta]) mapaRespuestas[r.id_pregunta] = []
+        mapaRespuestas[r.id_pregunta].push({ contenido: r.contenido, autor: r.nombre_autor || null })
       })
 
       const { data: imagenesData } = await supabase
@@ -101,14 +98,13 @@ export default function VistaPrevia() {
             .order('orden')
 
           const preguntasConRespuesta = (preguntas || []).filter(
-            (p) => mapaRespuestas[p.id]
+            (p) => mapaRespuestas[p.id]?.length > 0
           )
 
           return {
             topico: t,
             preguntas: preguntasConRespuesta,
             respuestas: mapaRespuestas,
-            autores: mapaAutores,
             imagenes: mapaImagenes,
           }
         })
@@ -128,10 +124,12 @@ export default function VistaPrevia() {
    const preguntasYRespuestas = cap.preguntas
   .map((p) => {
     const pregunta = esAutobiografia ? p.texto_es : p.texto_es_tercera
-    const respuesta = cap.respuestas[p.id]
-    const autor = cap.autores[p.id]
+    const respuestas = cap.respuestas[p.id] || []
     const tieneImagen = !!cap.imagenes[p.id]
-    return `Pregunta: ${pregunta}\nRespuesta${autor ? ` (escrita por ${autor})` : ''}: ${respuesta}${tieneImagen ? '\n[Esta respuesta tiene una foto adjunta]' : ''}`
+    const textoRespuestas = respuestas.length === 1
+      ? `Respuesta${respuestas[0].autor ? ` (escrita por ${respuestas[0].autor})` : ''}: ${respuestas[0].contenido}`
+      : respuestas.map((r) => `- ${r.autor ? `${r.autor}: ` : ''}${r.contenido}`).join('\n')
+    return `Pregunta: ${pregunta}\n${textoRespuestas}${tieneImagen ? '\n[Esta respuesta tiene una foto adjunta]' : ''}`
   })
   .join('\n\n')
 
@@ -291,7 +289,9 @@ return data.texto || ''
           textoCompleto = cap.narrativa
         } else {
           textoCompleto = cap.preguntas
-            .map((p) => cap.respuestas[p.id])
+            .flatMap((p) => (cap.respuestas[p.id] || []).map((r) =>
+              r.autor ? `[${r.autor}] ${r.contenido}` : r.contenido
+            ))
             .filter(Boolean)
             .join('\n\n')
         }
@@ -702,18 +702,30 @@ return data.texto || ''
                   ) : (
                     <div className="flex flex-col gap-6">
                       {capActual.preguntas.map((p) => (
-                        <div key={p.id} className="flex flex-col gap-2">
+                        <div key={p.id} className="flex flex-col gap-3">
                           <p className="text-xs text-[var(--color-azul)] italic">
                             {historia.tipo === 'autobiografia' ? p.texto_es : p.texto_es_tercera}
                           </p>
-                          <p className="text-sm text-[#141414] leading-relaxed">
-                            {capActual.respuestas[p.id]}
-                          </p>
-                          {capActual.autores[p.id] && (
-                            <p className="text-xs text-[#AAAAAA] italic text-right">
-                              — {capActual.autores[p.id]}
-                            </p>
-                          )}
+                          {(capActual.respuestas[p.id] || []).map((resp, idx) => (
+                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {resp.autor && (
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                  <div style={{
+                                    width: 20, height: 20, borderRadius: '50%',
+                                    background: 'var(--color-terracota)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0,
+                                  }}>
+                                    {resp.autor[0].toUpperCase()}
+                                  </div>
+                                  <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-gris)' }}>
+                                    {resp.autor}
+                                  </span>
+                                </div>
+                              )}
+                              <p className="text-sm text-[#141414] leading-relaxed">{resp.contenido}</p>
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </div>
